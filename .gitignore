@@ -1,0 +1,45 @@
+node_modules/
+.next/
+*.tsbuildinfo
+.env*
+.local/
+test-results/
+playwright-report/
+
+# Separate client repository
+/Finger_Service/
+
+# Local agent/editor settings
+.codex/
+.agents/
+.claude/
+.cursor/
+.vscode/
+.idea/
+.aws/
+AGENTS.md
+
+# Private source files, exports, reports and backups
+/examples/
+/WebAtten.txt
+/docs/examples-analysis.md
+/docs/payroll-analysis.md
+/backups/
+/uploads/
+/exports/
+*.log
+*.dump
+*.bak
+*.zip
+*.exe
+*.pem
+*.key
+
+# Build and operating-system files
+coverage/
+dist/
+out/
+.DS_Store
+Thumbs.db
+Desktop.ini
+!.env.example

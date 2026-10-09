@@ -1,0 +1,67 @@
+import { test, expect, seedData, TEST_PASSWORD } from "./sql-fixture";
+import { request as api } from "@playwright/test";
+test("only admin can change global or local money settings and local rates apply to one employee and pay month", async ({ request, browser, page }) => {
+  await seedData({ shifts: ["LOCAL", "GLOBAL"].map(id => ({ emp_id: id, device_emp_id: id, emp_name: id, agency: "Test", department: "Dry", date: "2026-09-14", shift_code: "M", shift_start: "08:00", shift_end: "17:00", requested_ot_hrs: 0, ot_task_target: "" })), punches: [], reviews: {}, audit: [] });
+  let state = await (await request.get("/api/employee-payroll?employeeId=LOCAL&month=2026-09")).json();
+  const payload = { employeeId: "LOCAL", month: "2026-09", revision: state.revision, dailyWage: 400 };
+  const supervisor = await api.newContext({ baseURL: "http://localhost:3001" });
+  try {
+    expect((await supervisor.post("/api/auth/login", { data: { username: "testsupervisor", password: TEST_PASSWORD } })).ok()).toBeTruthy();
+    expect((await supervisor.put("/api/employee-payroll", { data: payload })).status()).toBe(403);
+    expect((await supervisor.put("/api/payroll", { data: { month: payload.month, revision: state.revision, settings: state.global } })).status()).toBe(403);
+    expect((await supervisor.get("/api/employee-payroll?employeeId=LOCAL&month=2026-09")).ok()).toBeTruthy();
+    const context = await browser.newContext({ baseURL: "http://localhost:3001", storageState: await supervisor.storageState() });
+    try {
+      const supPage = await context.newPage();
+      await supPage.goto("/employees/LOCAL/calendar?month=2026-09");
+      await supPage.getByRole("button", { name: "ตั้งค่าเรทเงินรายบุคคล" }).click();
+      await expect(supPage.getByRole("checkbox", { name: "ใช้เรท Global" })).toBeDisabled();
+      await expect(supPage.getByRole("button", { name: "บันทึกเรทเฉพาะคนนี้" })).toBeDisabled();
+      await supPage.goto("/payroll");
+      await supPage.locator(".payroll-settings-toggle").click();
+      await expect(supPage.getByLabel("Service OT (%)", { exact: true })).toBeDisabled();
+      await expect(supPage.getByLabel("Service ค่าแรง (%)", { exact: true })).toBeDisabled();
+      await expect(supPage.getByLabel("ค่าจ้างฐาน / วัน (บาท)", { exact: true })).toBeDisabled();
+    } finally { await context.close(); }
+  } finally { await supervisor.dispose(); }
+  expect((await request.put("/api/employee-payroll", { data: payload })).ok()).toBeTruthy();
+  expect((await request.put("/api/employee-payroll", { data: payload })).status()).toBe(409);
+  state = await (await request.get("/api/employee-payroll?employeeId=LOCAL&month=2026-09")).json();
+  expect(state.local.dailyWage).toBe(400);
+  expect((await (await request.get("/api/employee-payroll?employeeId=GLOBAL&month=2026-09")).json()).local).toBeNull();
+  expect((await (await request.get("/api/employee-payroll?employeeId=LOCAL&month=2026-10")).json()).local).toBeNull();
+  expect((await request.put("/api/employee-payroll", { data: { ...payload, revision: state.revision, dailyWage: null } })).ok()).toBeTruthy();
+  expect((await (await request.get("/api/employee-payroll?employeeId=LOCAL&month=2026-09")).json()).local).toBeNull();
+  await page.goto("/employees/LOCAL/calendar?month=2026-09");
+  await page.getByRole("button", { name: "ตั้งค่าเรทเงินรายบุคคล" }).click();
+  await expect(page.getByRole("checkbox", { name: "ใช้เรท Global" })).toBeEnabled();
+  await page.getByRole("checkbox", { name: "ใช้เรท Global" }).uncheck();
+  await page.getByLabel("ค่าจ้างฐาน / วัน (บาท)", { exact: true }).fill("400");
+  const saved = page.waitForResponse(response => response.url().includes("/api/employee-payroll") && response.request().method() === "PUT");
+  await page.getByRole("button", { name: "บันทึกเรทเฉพาะคนนี้" }).click();
+  expect((await saved).ok()).toBeTruthy();
+  await expect(page.locator(".employee-payroll-settings")).toContainText("480.00");
+  let report = await (await request.get("/api/payroll?month=2026-09&cycle=calendar")).json();
+  expect(report.rows.find((r: {id: string}) => r.id === "LOCAL").rate.dailyWage).toBe(480);
+  expect(report.rows.find((r: {id: string}) => r.id === "GLOBAL").rate.dailyWage).toBe(428.4);
+  const wageResponse = await request.put("/api/payroll", { data: { month: "2026-09", revision: report.revision, settings: { ...report.settings, wageServicePercent: 25 } } });
+  expect(wageResponse.ok()).toBeTruthy();
+  const changed = await (await request.get("/api/payroll?month=2026-09&cycle=calendar")).json();
+  expect(changed.rows.find((r: {id: string}) => r.id === "LOCAL").rate.dailyWage).toBe(500);
+  expect(changed.rows[0].rate.rates).toEqual(report.rows[0].rate.rates);
+  report = changed;
+  expect((await request.put("/api/payroll", { data: { month: "2026-09", revision: report.revision, settings: { ...report.settings, servicePercent: -1 } } })).status()).toBe(400);
+  expect((await request.put("/api/payroll", { data: { month: "2026-09", revision: report.revision, settings: { ...report.settings, servicePercent: 10 } } })).ok()).toBeTruthy();
+  report = await (await request.get("/api/payroll?month=2026-09&cycle=calendar")).json();
+  expect(report.rows.find((r: {id: string}) => r.id === "LOCAL").rate.dailyWage).toBe(500);
+  expect(report.rows.find((r: {id: string}) => r.id === "GLOBAL").rate.dailyWage).toBe(446.25);
+  await page.goto("/payroll");
+  await page.locator(".payroll-settings-toggle").click();
+  await expect(page.getByLabel("Service ค่าแรง (%)", { exact: true })).toHaveValue("20");
+  await expect(page.getByLabel("Service OT (%)", { exact: true })).toHaveValue("8");
+  await expect(page.locator(".payroll-rate-preview")).toContainText("428.40");
+  await page.getByLabel("Service ค่าแรง (%)", { exact: true }).fill("25");
+  await expect(page.locator(".payroll-rate-preview")).toContainText("446.25");
+  await expect(page.locator(".payroll-rate-preview")).toContainText("48.20");
+  await page.locator(".payroll-settings").screenshot({ path: ".local/payroll-split-service.png" });
+});

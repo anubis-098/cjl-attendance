@@ -1,0 +1,20 @@
+import { test, expect, seedData } from "./sql-fixture";
+test("regular early arrivals are not ambiguous and hover OT starts at planned boundaries", async ({ page }) => {
+  const shifts = ["14", "15", "16", "17"].map(day => ({ emp_id: "EARLY", device_emp_id: "EARLY", emp_name: "Early employee", agency: "Test", department: "Frozen", date: `2026-09-${day}`, shift_code: "M", shift_start: "06:00", shift_end: "15:00", requested_ot_hrs: 0, ot_task_target: "" }));
+  await seedData({ calculationVersion: 2, shifts, punches: shifts.flatMap((s, i) => (i === 3 ? ["04:41"] : ["04:41", "18:01"]).map(time => ({ device_emp_id: "EARLY", punch_timestamp: `${s.date} ${time}:00`, punch_type: "UNKNOWN" as const }))), reviews: {}, audit: [] });
+  await page.goto("/employees/EARLY/calendar?month=2026-09");
+  const card = page.getByRole("button", { name: "รายละเอียด 2026-09-15 M", exact: true });
+  await expect(card.locator("..")).not.toHaveClass(/status-missing/);
+  await card.evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2));
+  await card.hover();
+  const popup = page.getByRole("tooltip");
+  await expect(popup).toBeVisible();
+  await expect(popup.locator(".shift-preview-totals > div").nth(1)).toContainText("1 ชม.");
+  await expect(popup.locator(".shift-preview-totals > div").nth(2)).toContainText("3 ชม.");
+  await expect(popup.locator(".preview-ot")).toHaveCount(2);
+  const master = await popup.locator(".preview-plan").boundingBox();
+  const before = await popup.locator(".preview-ot").first().boundingBox();
+  const after = await popup.locator(".preview-ot").last().boundingBox();
+  expect(Math.abs(before!.x + before!.width - master!.x)).toBeLessThan(1);
+  expect(Math.abs(after!.x - (master!.x + master!.width))).toBeLessThan(1);
+});

@@ -1,0 +1,24 @@
+import { test, expect, seedData } from "./sql-fixture";
+test("global and local remarks persist independently without changing attendance", async ({ page, request }) => {
+  await seedData({ shifts: ["A", "B"].map(id => ({ emp_id: id, device_emp_id: id, emp_name: id, agency: "Test", department: "Dry", date: "2026-09-03", shift_code: "M", shift_start: "08:00", shift_end: "17:00", requested_ot_hrs: 0, ot_task_target: "" })), punches: [], reviews: {}, audit: [] });
+  const put = (employeeId: string, text: string, expected = "") => request.put("/api/calendar-remarks", { data: { date: "2026-09-03", employeeId, text, expected } });
+  expect((await put("", "Heavy rain")).ok()).toBeTruthy();
+  expect((await put("A", "Road flooded")).ok()).toBeTruthy();
+  expect((await put("", "stale edit")).status()).toBe(409);
+  await page.goto("/employees/A/calendar?month=2026-09");
+  const button = page.getByRole("button", { name: "หมายเหตุวันที่ 2026-09-03", exact: true });
+  await expect(button).toHaveCount(0);
+  await expect(page.locator('[data-calendar-date="2026-09-03"] .calendar-remark-label')).toHaveText(["Heavy rain", "เฉพาะคน: Road flooded"]);
+  expect((await put("A", "Updated local note", "Road flooded")).ok()).toBeTruthy();
+  await page.reload();
+  await expect(button).toHaveCount(0);
+  await expect(page.locator('[data-calendar-date="2026-09-03"] .calendar-remark-label')).toHaveText(["Heavy rain", "เฉพาะคน: Updated local note"]);
+  await page.goto("/employees/B/calendar?month=2026-09");
+  await expect(button).toHaveCount(0);
+  await expect(page.locator('[data-calendar-date="2026-09-03"] .calendar-remark-label')).toHaveText(["Heavy rain"]);
+  expect((await put("A", "", "Updated local note")).ok()).toBeTruthy();
+  const workspace = await (await request.get("/api/workspace")).json();
+  expect(workspace.data.calendarRemarks).toEqual([{ date: "2026-09-03", employeeId: "", text: "Heavy rain" }]);
+  expect(workspace.data.reviews).toEqual({});
+  expect(workspace.data.audit.length).toBe(4);
+});

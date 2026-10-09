@@ -1,0 +1,28 @@
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: cj_app
+      POSTGRES_PASSWORD: cj_test_only
+      POSTGRES_DB: postgres
+    ports: ["127.0.0.1:5433:5432"]
+    volumes:
+      - cj_test_sql:/var/lib/postgresql/data
+      - ./sql/001-databases.sql:/docker-entrypoint-initdb.d/001-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cj_app -d employee_db"]
+      interval: 3s
+      retries: 10
+  web:
+    image: cj-attendance-web:local
+    ports: ["127.0.0.1:3001:3000"]
+    environment:
+      PGHOST: database
+      PGPORT: "5432"
+      PGUSER: cj_app
+      PGPASSWORD: cj_test_only
+    depends_on:
+      database:
+        condition: service_healthy
+volumes:
+  cj_test_sql:
