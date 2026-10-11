@@ -8,6 +8,7 @@ import { useTranslation } from "@/lib/i18n";
 
 const fieldNames: Record<string, [string, string]> = {
   inTime: ["เวลาเข้า", "Clock in"], outTime: ["เวลาออก", "Clock out"],
+  manualPair: ["จับคู่สแกนด้วยตนเอง", "Manually paired scans"],
   approved: ["ยืนยัน OT", "OT confirmed"], overBudget: ["หัวหน้างานลงนาม", "Supervisor sign-off"],
   note: ["หมายเหตุ", "Note"], deductOTBreak: ["หักพัก OT 30 นาที", "Deduct 30-minute OT break"],
   shift: ["กะ", "Shift"], shift_code: ["รหัสกะ", "Shift code"],

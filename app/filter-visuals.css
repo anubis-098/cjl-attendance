@@ -1,0 +1,39 @@
+/* Explicit state follows React values, including reset and restored filters. */
+[data-filter-active="true"]:not(:disabled) {
+  border-color: #2998d3;
+  background-color: #edf7ff;
+  color: #075b8b;
+  box-shadow: 0 0 0 1px #80bee24d;
+}
+.filters select[data-filter-active="true"],
+.filters input[data-filter-active="true"],
+.date-controls input[data-filter-active="true"],
+.month-controls select[data-filter-active="true"],
+.month-controls input[data-filter-active="true"],
+.page-size-control select[data-filter-active="true"] {
+  border-color: #2998d3;
+  background-color: #edf7ff;
+  color: #075b8b;
+}
+.search[data-filter-active="true"] input { background: transparent; color: inherit; }
+.filters select, .filters input, .filters .search, .date-controls input, .month-controls select {
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+.filters select:hover:not(:disabled), .filters input:hover:not(:disabled) { border-color: #71b5dc; }
+select option { background: #fff; color: #203247; }
+select option:checked { background: #edf7ff; color: #075b8b; }
+.segmented button.selected[aria-pressed="true"] { color: #fff; background: #007caf; box-shadow: 0 1px 3px #007caf33; }
+.segmented button.selected[aria-pressed="true"]:hover { background: #006da8; }
+.date-controls .button.today { color: #fff; border-color: #007caf; background: #007caf; }
+.date-controls .button.today:hover { background: #006da8; border-color: #006da8; }
+.status-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; margin: 12px 0; }
+.status-legend-item { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 13px; color: #42596d; }
+.legend-swatch { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 23px; border: 1px solid; border-left-width: 3px; border-radius: 5px; flex-shrink: 0; }
+.legend-normal { background: #edf5fc; color: #1d4e70; border-color: #b8d4e9; border-left-color: #0088c3; }
+.legend-ot { background: #fff9ed; color: #805619; border-color: #f0d69f; border-left-color: #ec8922; }
+.legend-approved { background: #e8f5ec; color: #247544; border-color: #a7d4b7; border-left-color: #2b8c50; }
+.legend-missing { background: #fde8e8; color: #8c2626; border-color: #e79999; border-left-color: #ce5964; }
+.status-legend.status-legend-compact { padding: 0; margin: 0; gap: 8px 14px; }
+@media (prefers-reduced-motion: reduce) {
+  .filters select, .filters input, .filters .search, .date-controls input, .month-controls select { transition: none; }
+}

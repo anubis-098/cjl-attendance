@@ -109,12 +109,13 @@ test("day shifts occupy nine hours and midnight ends stay in the starting column
 test("actual calendars hide Master-only work but retain holidays, leave and incomplete scans", () => {
   const shifts = [shift("2026-09-14"), shift("2026-09-15"), { ...shift("2026-09-16"), shift_code: "H" }, { ...shift("2026-09-17"), shift_code: "SL" }];
   const results = new Map(shifts.map(s => [keyOf(s), reconcile(s, [])]));
-  const actual: ActualInterval = { id: "single", start: stamp("2026-09-15", "20:00"), end: stamp("2026-09-16", "04:00"), inMs: stamp("2026-09-15", "20:00"), estimated: true, uncertain: true, reviewed: false, reason: "single scan" };
+  const actual: ActualInterval = { id: "single", start: stamp("2026-09-15", "20:00"), end: stamp("2026-09-15", "20:00"), inMs: stamp("2026-09-15", "20:00"), estimated: true, uncertain: true, reviewed: false, reason: "single scan" };
   const events = layoutShifts(shifts, shifts.map(s => s.date), results, Date.now(), new Map([[keyOf(shifts[1]), [actual]]]));
   assert.deepEqual(events.map(e => e.shift.date), ["2026-09-15", "2026-09-16", "2026-09-17"]);
   assert.equal(events[0].actual, actual);
   assert.equal(events[0].actual?.outMs, undefined);
-  assert.equal(events[0].last, 2);
+  assert.equal(events[0].last, 1);
+  assert.equal(events[0].end, events[0].start);
   assert.equal(events[1].allDay, true);
   assert.equal(events[2].allDay, true);
   assert.equal(events.some(e => e.plannedOnly), false);

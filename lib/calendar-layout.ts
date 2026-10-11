@@ -64,7 +64,7 @@ export function layoutShifts(
               r.outMs ?? 0,
             );
       const clippedStart = Math.max(start, rangeStart),
-        clippedEnd = Math.min(end, rangeEnd);
+        clippedEnd = Math.min(actual?.estimated && start === end ? end + 1 : end, rangeEnd);
       if (clippedEnd <= clippedStart) return [];
       const first = Math.floor((clippedStart - rangeStart) / dayMs);
       const last = Math.floor((clippedEnd - rangeStart - 1) / dayMs);

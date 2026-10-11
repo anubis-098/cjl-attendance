@@ -1,6 +1,7 @@
 import { guard } from "@/lib/auth";
 import { readWorkspace, updateEmployeeStore } from "@/lib/database";
 import { keyOf, reconcile, Review } from "@/lib/engine";
+import { punchTime } from "@/lib/shift-window";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET() {
@@ -43,6 +44,10 @@ export async function PUT(request: Request) {
       punches.set(p.device_emp_id, list);
     }
     for (const [key, review] of Object.entries(changes)) {
+      // Manual pairing provenance may only be created by the validated pairing API.
+      const prior = current.data.reviews[key];
+      if (review.manualPair && (!prior?.manualPair || review.inTime !== prior.inTime || review.outTime !== prior.outTime))
+        delete review.manualPair;
       const s = shifts.get(key);
       if (!s) throw Error("ไม่พบกะที่ต้องการตรวจสอบ");
       if (
@@ -58,8 +63,8 @@ export async function PUT(request: Request) {
       for (const t of [review.inTime, review.outTime])
         if (
           t &&
-          (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(t) ||
-            !Number.isFinite(Date.parse(t + ":00+07:00")))
+          (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(t) ||
+            !Number.isFinite(punchTime(t)))
         )
           throw Error("เวลาไม่ถูกต้อง");
       if (review.inTime && review.outTime && review.outTime <= review.inTime)

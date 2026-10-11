@@ -85,8 +85,8 @@ export default function ReviewDrawer({
     otRulesVersion: OT_RULES_VERSION,
     overBudget: data.reviews[keyOf(active)]?.overBudget ?? false,
     note: data.reviews[keyOf(active)]?.note ?? "",
-    inTime: result.inMs === undefined ? "" : isoLocal(result.inMs),
-    outTime: result.outMs === undefined ? "" : isoLocal(result.outMs),
+    inTime: data.reviews[keyOf(active)]?.inTime || (result.inMs === undefined ? "" : isoLocal(result.inMs)),
+    outTime: data.reviews[keyOf(active)]?.outTime || (result.outMs === undefined ? "" : isoLocal(result.outMs)),
   }));
   const preview = useMemo(
     () => reconcile(active, punches, draft),
@@ -97,8 +97,8 @@ export default function ReviewDrawer({
     if (!active || evidenceBusy) return;
     const old = result;
     const changed =
-      draft.inTime !== (old.inMs === undefined ? "" : isoLocal(old.inMs)) ||
-      draft.outTime !== (old.outMs === undefined ? "" : isoLocal(old.outMs)) ||
+      draft.inTime !== (data.reviews[keyOf(active)]?.inTime || (old.inMs === undefined ? "" : isoLocal(old.inMs))) ||
+      draft.outTime !== (data.reviews[keyOf(active)]?.outTime || (old.outMs === undefined ? "" : isoLocal(old.outMs))) ||
       Boolean(draft.deductOTBreak) !==
         Boolean(data.reviews[keyOf(active)]?.deductOTBreak);
     if (changed && !reason.trim()) {

@@ -93,6 +93,7 @@ export default function Filters({
           <input
             aria-label={t(view === "range" ? "จากวันที่" : "เลือกวันที่")}
             type="date"
+            data-filter-active={Boolean(date)}
             value={date}
             onChange={(e) => {
               if (e.target.value) {
@@ -103,7 +104,7 @@ export default function Filters({
           />
           {view === "range" && <>
             <span>{t("ถึงวันที่")}</span>
-            <input aria-label={t("ถึงวันที่")} type="date" min={date} value={filters.rangeEnd || date}
+            <input aria-label={t("ถึงวันที่")} type="date" min={date} data-filter-active={true} value={filters.rangeEnd || date}
               onChange={e => { if (e.target.value && e.target.value >= date) setFilters(p => ({ ...p, rangeEnd: e.target.value })); }} />
           </>}
           <button
@@ -116,7 +117,7 @@ export default function Filters({
         <span className="timezone">{t("Asia/Bangkok (GMT+7)")}</span>
       </div>
       <div className="filters">
-        <label className="search">
+        <label className="search" data-filter-active={Boolean(search.trim())}>
           <Search size={15} />
           <input
             placeholder={t("ค้นหาชื่อ หรือรหัสพนักงาน...")}
@@ -126,6 +127,7 @@ export default function Filters({
         </label>
         <select
           aria-label={t("Agency")}
+          data-filter-active={agency !== "all"}
           value={agency}
           onChange={(e) => setAgency(e.target.value)}
         >
@@ -136,6 +138,7 @@ export default function Filters({
         </select>
         <select
           aria-label={t("แผนก")}
+          data-filter-active={department !== "all"}
           value={department}
           onChange={(e) => setDepartment(e.target.value)}
         >
@@ -146,6 +149,7 @@ export default function Filters({
         </select>
         <select
           aria-label={t("กะ")}
+          data-filter-active={shift !== "all"}
           value={shift}
           onChange={(e) => setShift(e.target.value)}
         >
@@ -171,6 +175,7 @@ export default function Filters({
         {children}
         <select
           aria-label={t("ประเภทพนักงาน")}
+          data-filter-active={filters.workerType !== "all"}
           value={filters.workerType}
           onChange={(e) =>
             setFilters((p) => ({ ...p, workerType: e.target.value }))

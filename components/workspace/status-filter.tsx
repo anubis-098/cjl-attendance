@@ -15,6 +15,7 @@ export default function StatusFilter({
   return (
     <select
       aria-label={t("สถานะ")}
+      data-filter-active={value !== "all"}
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >

@@ -130,6 +130,7 @@ export default function PayrollPage() {
             <input
               aria-label={t("เดือนจ่าย")}
               type="month"
+              data-filter-active={Boolean(month)}
               value={month}
               disabled={busy}
               onChange={(e) => {
@@ -146,6 +147,7 @@ export default function PayrollPage() {
             <select
               aria-label={t("รอบคำนวณ")}
               disabled={busy}
+              data-filter-active={true}
               value={cycle}
               onChange={(e) => setCycle(e.target.value)}
             >
@@ -199,6 +201,7 @@ export default function PayrollPage() {
           <input
             aria-label={t("ค้นหารายงานเงิน OT")}
             placeholder={t("ค้นหารหัสหรือชื่อพนักงาน")}
+            data-filter-active={Boolean(search.trim())}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -207,6 +210,7 @@ export default function PayrollPage() {
           />
           <select
             aria-label={t("Agency รายงานเงิน OT")}
+            data-filter-active={agency !== "all"}
             value={agency}
             onChange={(e) => {
               setAgency(e.target.value);

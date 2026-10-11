@@ -1,4 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap");
+@import "./manual-pairing.css";
+@import "./filter-visuals.css";
 :root {
   --ink: #203247;
   --muted: #687c90;

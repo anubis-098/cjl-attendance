@@ -122,7 +122,8 @@ export async function readWorkspace(transaction?: PoolClient) {
         applyShiftOverride(s, data.shiftOverrides?.[s.emp_id + "|" + s.date]),
       ]),
     );
-    for (const key of Object.keys(data.shiftOverrides || {})) {
+    for (const key of new Set([...Object.keys(data.shiftOverrides || {}),
+      ...Object.keys(data.reviews).filter(key => data.reviews[key].manualPair)])) {
       const separator = key.lastIndexOf("|"),
         id = key.slice(0, separator),
         date = key.slice(separator + 1);

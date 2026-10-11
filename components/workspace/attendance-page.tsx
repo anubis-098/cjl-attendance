@@ -425,7 +425,7 @@ export default function AttendancePage() {
                           return (
                             <div
                               key={event.id}
-                              className={`schedule-event ${!allDay ? "timed-event" : ""} ${overnight ? "overnight-event" : ""} ${continuesBefore ? "continues-before" : ""} ${continuesAfter ? "continues-after" : ""}`}
+                              className={`schedule-event ${event.actual?.estimated && event.start === event.end ? "scan-marker" : ""} ${!allDay ? "timed-event" : ""} ${overnight ? "overnight-event" : ""} ${continuesBefore ? "continues-before" : ""} ${continuesAfter ? "continues-after" : ""}`}
                               style={{
                                 gridColumn: `${first + 1} / ${last + 2}`,
                                 gridRow: lane + 1,
@@ -681,24 +681,7 @@ export default function AttendancePage() {
               "1 ช่อง = 24 ชั่วโมง · แถบกะต่อเนื่องตามเวลา · ยอดชั่วโมงและส่งออกยึดวันเริ่มกะ",
             )}
           </span>
-          <div className="legend">
-            <span>
-              <i className="blue" />
-              {t("ปกติ")}
-            </span>
-            <span>
-              <i className="green" />
-              {t("ยืนยันแล้ว")}
-            </span>
-            <span>
-              <i className="orange" />
-              {t("มาสาย / OT สูงเกินเป้า")}
-            </span>
-            <span>
-              <i className="red" />
-              {t("สแกนไม่ครบ")}
-            </span>
-          </div>
+          <ActualCalendarLegend compact />
           <span>{t("คลิกที่กะเพื่อดูรายละเอียดและตรวจสอบ")}</span>
         </div>
         <Pagination

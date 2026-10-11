@@ -214,6 +214,7 @@ export default function SourceDataPage({
             placeholder={t(
               master ? "ค้นหารหัส หรือชื่อพนักงาน" : "ค้นหารหัสพนักงาน",
             )}
+            data-filter-active={Boolean(search.trim())}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -227,6 +228,7 @@ export default function SourceDataPage({
                   <span>{t(filter.label)}</span>
                   <select
                     aria-label={t(filter.label)}
+                    data-filter-active={Boolean(employeeFilters[filter.key])}
                     value={employeeFilters[filter.key] ?? ""}
                     onChange={(e) => changeFilter(filter.key, e.target.value)}
                   >
@@ -243,6 +245,7 @@ export default function SourceDataPage({
                 <span>{t("ผลตรวจสอบ")}</span>
                 <select
                   aria-label={t("ผลตรวจสอบ")}
+                  data-filter-active={Boolean(employeeFilters.review)}
                   value={employeeFilters.review || ""}
                   onChange={(e) => changeFilter("review", e.target.value)}
                 >

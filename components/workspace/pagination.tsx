@@ -33,6 +33,7 @@ export default function Pagination({
           {t("แสดง")}
           <select
             aria-label={t("จำนวนรายการต่อหน้า")}
+            data-filter-active={pageSize !== 25}
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
           >

@@ -3,7 +3,7 @@ import { useTranslation } from "@/lib/i18n";
 import { clock, isoLocal, type Shift } from "@/lib/engine";
 import { actualCardStatus, type ActualInterval } from "@/lib/actual-timeline";
 import OTInvestigate from "./ot-investigate";
-import { Check } from "lucide-react";
+import { Check, Clock3, Timer, CircleAlert } from "lucide-react";
 import { workTime } from "@/lib/work-time";
 import { shiftWindow } from "@/lib/shift-window";
 
@@ -19,6 +19,13 @@ export default function ActualCard({
   deductOTBreak?: boolean;
 }) {
   const { t } = useTranslation();
+  if (actual.estimated && actual.start === actual.end) return (
+    <span className="scan-point" title={t("สแกนยังไม่มีคู่")}>
+      <span className="scan-point-line" />
+      <b>{clock(actual.inMs ?? actual.outMs!)}</b>
+      <small>{t("ยังไม่มีคู่")}</small>
+    </span>
+  );
   const monitoredHours = actualCardStatus(actual, shift, deductOTBreak) === "actual-ot"
     && actual.inMs !== undefined && actual.outMs !== undefined
     ? workTime(actual.inMs, actual.outMs, deductOTBreak, shiftWindow(shift, shift.date)).overtimeHours : 0;
@@ -33,7 +40,7 @@ export default function ActualCard({
       <small>
         {t(
           actual.estimated
-            ? "เวลาคาดการณ์"
+            ? "สแกนยังไม่มีคู่"
             : actual.uncertain
               ? "คู่สแกนรอตรวจสอบ"
               : actual.reviewed ? "เวลาที่หัวหน้างานแก้ไข" : "Actual · เวลาสแกน",
@@ -56,14 +63,21 @@ export default function ActualCard({
   );
 }
 
-export function ActualCalendarLegend() {
+export function ActualCalendarLegend({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation();
   return (
-    <p className="actual-calendar-legend">
-      {t(
-        "ปฏิทิน Actual: แสดงเวลาสแกนจริง · ฟ้า = งานปกติ · เหลือง = มี OT · เขียว = ยืนยันแล้ว · แดง = สแกนไม่ครบ/กำกวม",
-      )}
-    </p>
+    <div className={`actual-calendar-legend status-legend ${compact ? "status-legend-compact" : ""}`}
+      role="group" aria-label={t("สถานะคาบเวลาสแกน")}>
+      {[
+        { status: "normal", label: "งานปกติ", Icon: Clock3 },
+        { status: "ot", label: "มี OT", Icon: Timer },
+        { status: "approved", label: "ยืนยันแล้ว", Icon: Check },
+        { status: "missing", label: "สแกนไม่ครบ / กำกวม", Icon: CircleAlert },
+      ].map(({ status, label, Icon }) => <span className="status-legend-item" key={status}>
+        <span className={`legend-swatch legend-${status}`} aria-hidden="true"><Icon size={14} strokeWidth={2.5} /></span>
+        <span>{t(label)}</span>
+      </span>)}
+    </div>
   );
 }
 

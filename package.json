@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test lib/engine.test.ts lib/import-cj.test.ts lib/master-data.test.ts lib/calendar-layout.test.ts lib/actual-timeline.test.ts lib/payroll.test.ts lib/payroll-dashboard.test.ts lib/payroll-service.test.ts lib/attendance-evidence.test.ts lib/auth-crypto.test.ts lib/i18n.test.ts"
+    "test": "tsx --test lib/engine.test.ts lib/import-cj.test.ts lib/master-data.test.ts lib/calendar-layout.test.ts lib/actual-timeline.test.ts lib/manual-pairing.test.ts lib/payroll.test.ts lib/payroll-dashboard.test.ts lib/payroll-service.test.ts lib/attendance-evidence.test.ts lib/auth-crypto.test.ts lib/i18n.test.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

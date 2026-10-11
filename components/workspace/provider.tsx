@@ -3,6 +3,7 @@ import { useTranslation } from "@/lib/i18n";
 import { Data, Punch, isoLocal } from "@/lib/engine";
 import { normalizeDepartment } from "@/lib/departments";
 import type { ShiftOverride } from "@/lib/shift-overrides";
+import type { ScanPair } from "@/lib/manual-pairing";
 import {
   createContext,
   useCallback,
@@ -42,6 +43,7 @@ const empty: Data = {
   audit: [],
 };
 type Workspace = {
+  saveScanPairs: (employeeId: string, pairs: ScanPair[]) => Promise<boolean>;
   saveShifts: (
     employeeId: string,
     dates: string[],
@@ -261,6 +263,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     },
     [apply],
   );
+  const saveScanPairs = useCallback(async (employeeId: string, pairs: ScanPair[]) => {
+    if (saving.current) return false;
+    saving.current = true;
+    try {
+      const res = await fetch("/api/scan-pairs", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId, pairs, revision: state.current.revision }) });
+      const payload = await res.json();
+      if (!res.ok) throw Error(payload.error);
+      apply(payload);
+      return true;
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
+      return false;
+    } finally { saving.current = false; }
+  }, [apply]);
   const value = useMemo(
     () => ({
       data,
@@ -275,6 +292,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       saveHolidays,
       saveCompanyHolidays,
       saveShifts,
+      saveScanPairs,
     }),
     [
       data,
@@ -287,6 +305,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       saveHolidays,
       saveCompanyHolidays,
       saveShifts,
+      saveScanPairs,
     ],
   );
   return (

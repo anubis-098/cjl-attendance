@@ -32,6 +32,141 @@ const shift: Shift = {
   ot_task_target: "",
 };
 
+test("DF068141 long overnight exit remains on the entry date when the latest scan is open", () => {
+  const logs = [
+    p("2026-09-28", "17:00"), p("2026-09-29", "06:00"),
+    p("2026-09-29", "17:26"), p("2026-09-30", "04:28"),
+    p("2026-09-30", "17:38"), p("2026-10-01", "03:00"),
+    p("2026-10-01", "16:45"), p("2026-10-02", "03:01"),
+    p("2026-10-02", "16:52"), p("2026-10-03", "05:15"),
+    p("2026-10-03", "17:42"), p("2026-10-04", "03:03"),
+    p("2026-10-05", "17:34"), p("2026-10-06", "08:35"),
+    p("2026-10-06", "16:37"), p("2026-10-07", "06:00"),
+    p("2026-10-07", "17:27"), p("2026-10-08", "04:00"),
+    p("2026-10-08", "17:43"), p("2026-10-09", "03:02"),
+    p("2026-10-09", "16:34"), p("2026-10-10", "05:01"),
+    p("2026-10-10", "17:51"),
+  ];
+  const original = JSON.stringify(logs);
+  for (let count = 14; count <= logs.length; count++) {
+    const result = pairActualScans(logs.slice(0, count));
+    for (let i = 0; i < Math.floor(count / 2); i++) {
+      assert.equal(result[i].inMs, Date.parse(logs[2 * i].punch_timestamp.replace(" ", "T") + "+07:00"));
+      assert.equal(result[i].outMs, Date.parse(logs[2 * i + 1].punch_timestamp.replace(" ", "T") + "+07:00"));
+    }
+    if (count % 2) assert.equal(result.at(-1)!.outMs, undefined);
+  }
+  assert.equal(JSON.stringify(logs), original);
+  const days = Array.from({length: 6}, (_, i) => ({ ...shift, date: `2026-10-${String(i + 5).padStart(2, "0")}` }));
+  const timeline = buildActualTimeline(days, new Map([["E", logs]]), {});
+  assert.equal(timeline.get("E|2026-10-05")![0].outMs, stamp("2026-10-06", "08:35"));
+  assert.equal(timeline.get("E|2026-10-06")![0].inMs, stamp("2026-10-06", "16:37"));
+});
+
+test("recent entry evidence supports long day and night periods without depending on employee ID or Master", () => {
+  for (const startHour of [4, 8, 16, 20]) {
+    const logs: Punch[] = [];
+    const starts: number[] = [];
+    for (const day of [1, 2, 5, 6, 7, 8]) {
+      const start = stamp(`2026-10-0${day}`, `${String(startHour).padStart(2, "0")}:00`);
+      starts.push(start);
+      const hours = day < 5 ? 10 : 15.5;
+      for (const ms of day === 8 ? [start] : [start, start + hours * 3600000])
+        logs.push({device_emp_id: "OTHER", punch_timestamp: new Date(ms).toISOString(), punch_type: "UNKNOWN"});
+    }
+    const result = pairActualScans(logs);
+    assert.equal(result.length, starts.length);
+    assert.deepEqual(result.map(x => x.inMs), starts);
+    assert.equal(result[2].outMs, starts[2] + 15.5 * 3600000);
+    assert.equal(result.at(-1)!.outMs, undefined);
+  }
+});
+
+test("past entry patterns do not override explicit directions or fabricate a missing exit", () => {
+  const history = [p("2026-10-01", "17:00"), p("2026-10-02", "03:00"),
+    p("2026-10-02", "17:00"), p("2026-10-03", "03:00")];
+  const missing = pairActualScans([...history, p("2026-10-05", "17:00"),
+    p("2026-10-06", "17:00"), p("2026-10-07", "03:00")]);
+  assert.equal(missing[2].outMs, undefined);
+  assert.equal(missing[3].inMs, stamp("2026-10-06", "17:00"));
+  const explicit = pairActualScans([...history, p("2026-10-05", "17:00", "OUT"),
+    p("2026-10-06", "08:00", "IN"), p("2026-10-06", "17:00", "OUT")]);
+  assert.equal(explicit[2].inMs, undefined);
+  assert.equal(explicit[3].inMs, stamp("2026-10-06", "08:00"));
+});
+
+test("old or insufficient entry history does not steer a new block", () => {
+  const tail = [p("2026-10-15", "17:00"), p("2026-10-16", "08:30"),
+    p("2026-10-16", "17:00"), p("2026-10-17", "08:30"), p("2026-10-17", "17:00")];
+  const endpoints = (logs: Punch[]) => pairActualScans(logs)
+    .filter(x => x.start >= stamp("2026-10-15", "00:00")).map(x => [x.inMs, x.outMs]);
+  for (const history of [
+    [p("2026-10-01", "17:00"), p("2026-10-02", "03:00"), p("2026-10-02", "17:00"), p("2026-10-03", "03:00")],
+    [p("2026-10-12", "17:00"), p("2026-10-13", "03:00")],
+  ]) assert.deepEqual(endpoints([...history, ...tail]), endpoints(tail));
+});
+
+test("BE000609 supports a 16h13 overnight period without moving subsequent entries", () => {
+  const logs = [p("2026-10-01", "16:44"), p("2026-10-02", "04:29"),
+    p("2026-10-02", "16:43"), p("2026-10-03", "05:41"),
+    p("2026-10-03", "16:52"), p("2026-10-04", "04:33"),
+    p("2026-10-05", "16:46"), p("2026-10-06", "08:59"),
+    p("2026-10-06", "16:50"), p("2026-10-07", "06:00"),
+    p("2026-10-07", "16:52"), p("2026-10-08", "04:00"),
+    p("2026-10-08", "16:55"), p("2026-10-09", "04:09"),
+    p("2026-10-09", "16:52"), p("2026-10-10", "06:02"), p("2026-10-10", "16:53")];
+  for (let count = 8; count <= logs.length; count++) {
+    const result = pairActualScans(logs.slice(0, count));
+    for (let i = 0; i < Math.floor(count / 2); i++) {
+      assert.equal(result[i].inMs, Date.parse(logs[i * 2].punch_timestamp.replace(" ", "T") + "+07:00"));
+      assert.equal(result[i].outMs, Date.parse(logs[i * 2 + 1].punch_timestamp.replace(" ", "T") + "+07:00"));
+    }
+  }
+});
+
+test("BE000495 complete night pairs tolerate varying early arrival while the last entry stays open", () => {
+  const logs = [p("2026-10-03", "19:50"), p("2026-10-04", "05:00"),
+    p("2026-10-04", "19:43"), p("2026-10-05", "06:00"),
+    p("2026-10-05", "19:53"), p("2026-10-06", "06:00"),
+    p("2026-10-08", "19:53"), p("2026-10-09", "06:02"),
+    p("2026-10-09", "17:44"), p("2026-10-10", "06:00"), p("2026-10-10", "19:45")];
+  const result = pairActualScans(logs);
+  assert.equal(result[3].inMs, stamp("2026-10-08", "19:53"));
+  assert.equal(result[3].outMs, stamp("2026-10-09", "06:02"));
+  assert.equal(result[4].inMs, stamp("2026-10-09", "17:44"));
+  assert.equal(result[4].outMs, stamp("2026-10-10", "06:00"));
+  assert.ok(result.slice(0, -1).every(x => !x.uncertain));
+  assert.equal(result.at(-1)!.outMs, undefined);
+  assert.equal(result.at(-1)!.uncertain, true);
+});
+
+test("sudden day to night or night to day changes do not inherit a fixed historical shift", () => {
+  for (const [oldStart, oldEnd, newStart, newEnd] of [
+    ["08:00", "17:00", "20:00", "05:00"], ["20:00", "05:00", "08:00", "17:00"],
+  ]) {
+    const night = oldStart > oldEnd;
+    const logs = [p("2026-10-01", oldStart), p(night ? "2026-10-02" : "2026-10-01", oldEnd),
+      p("2026-10-02", oldStart), p(night ? "2026-10-03" : "2026-10-02", oldEnd),
+      p("2026-10-05", newStart), p(night ? "2026-10-05" : "2026-10-06", newEnd),
+      p("2026-10-06", newStart), p(night ? "2026-10-06" : "2026-10-07", newEnd)];
+    const result = pairActualScans(logs);
+    assert.equal(result.length, 4);
+    assert.equal(result[2].inMs, stamp("2026-10-05", newStart));
+    assert.equal(result[2].outMs, stamp(night ? "2026-10-05" : "2026-10-06", newEnd));
+    assert.equal(result[3].inMs, stamp("2026-10-06", newStart));
+  }
+});
+
+test("long-pair extension still requires evidence and never crosses twenty hours", () => {
+  const history = [p("2026-10-01", "17:00"), p("2026-10-02", "03:00"),
+    p("2026-10-02", "17:00"), p("2026-10-03", "03:00")];
+  const unsupported = pairActualScans([p("2026-10-05", "17:00"), p("2026-10-06", "10:00")]);
+  assert.ok(unsupported.every(x => x.estimated));
+  const tooLong = pairActualScans([...history, p("2026-10-05", "17:00"), p("2026-10-06", "14:00")]);
+  assert.equal(tooLong[2].outMs, undefined);
+  assert.ok(tooLong.slice(2).every(x => x.estimated));
+});
+
 test("BE001030 long daytime OT does not shift exits into the next day's entries", () => {
   const scans = [p("2026-10-03", "04:34"), p("2026-10-03", "15:01"),
     p("2026-10-04", "05:50"), p("2026-10-04", "18:00"),
@@ -180,7 +315,7 @@ test("actual night scans ignore a morning master and do not mutate payroll or so
   assert.equal(JSON.stringify({ shift, punches }), original);
 });
 
-test("a missing exit is estimated at entry plus eight hours without stealing next day scans", () => {
+test("a missing exit stays a point at the scan without stealing next day scans", () => {
   const a = pairActualScans([
     p("2026-10-01", "08:00"),
     p("2026-10-02", "08:00"),
@@ -189,7 +324,7 @@ test("a missing exit is estimated at entry plus eight hours without stealing nex
   assert.equal(a.length, 2);
   assert.equal(a[0].estimated, true);
   assert.equal(a[0].outMs, undefined);
-  assert.equal(a[0].end, stamp("2026-10-01", "16:00"));
+  assert.equal(a[0].end, stamp("2026-10-01", "08:00"));
   assert.equal(a[1].start, stamp("2026-10-02", "08:00"));
   assert.equal(a[1].end, stamp("2026-10-02", "17:00"));
   assert.equal(a[1].estimated, false);
@@ -203,7 +338,7 @@ test("a lone exit near the next entry remains ambiguous and never consumes the e
   ]);
   assert.equal(a.length, 2);
   assert.equal(a[0].inMs, undefined);
-  assert.equal(a[0].start, stamp("2026-09-30", "23:00"));
+  assert.equal(a[0].start, stamp("2026-10-01", "07:00"));
   assert.equal(a[1].inMs, stamp("2026-10-01", "08:00"));
   assert.equal(a[0].uncertain, true);
   assert.equal(a[1].uncertain, true);
@@ -245,7 +380,7 @@ test("verified corrections take precedence without manufacturing a missing endpo
   assert.equal(timeline.get(keyOf(shift))!.length, 1);
   const a = timeline.get(keyOf(shift))![0];
   assert.equal(a.outMs, undefined);
-  assert.equal(a.end, stamp(shift.date, "16:00"));
+  assert.equal(a.end, stamp(shift.date, "08:00"));
   assert.equal(a.reviewed, true);
   assert.equal(a.estimated, true);
 });

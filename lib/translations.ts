@@ -1,5 +1,28 @@
 // UI copy only. Employee names, imported values and free-form notes are not translated.
 const entries = `
+สถานะคาบเวลาสแกน|Scan period status
+สแกนไม่ครบ / กำกวม|Incomplete / ambiguous scans
+จับคู่สแกนเอง|Pair scans manually
+จับคู่สแกนด้วยตนเอง · รอยืนยัน OT|Manually paired scans · OT pending confirmation
+ยกเลิกจับคู่สแกน|Cancel manual pairing
+ยืนยันจับคู่|Confirm pairing
+ยกเลิกคู่นี้|Remove this pair
+ลากจากสแกนเข้าไปยังสแกนออก หรือคลิกสองเวลาเรียงกัน|Drag from the entry scan to the exit scan, or click two times in order
+เวลาทั้งหมดเป็นสแกนจริง · จับคู่ข้ามวันได้ · การจับคู่ไม่ใช่การยืนยัน OT|Actual scans only · Overnight pairs supported · Pairing does not approve OT
+เลือกสแกนออก|Select exit scan
+สแกนยังไม่มีคู่|Unpaired scan
+ยังไม่มีคู่|Unpaired
+สแกนเดี่ยวยังไม่ระบุเข้า/ออก กรุณาจับคู่|Single scan with unknown direction. Please pair scans
+พบสแกนออกอย่างเดียว ยังไม่มีคู่|Exit scan only, not yet paired
+พบสแกนเข้าอย่างเดียว ยังไม่มีคู่|Entry scan only, not yet paired
+เวลาแก้ไขยังไม่ครบ กรุณาจับคู่|Incomplete correction. Please pair scans
+บันทึกการจับคู่แล้ว · ยังไม่ได้ยืนยัน OT|Pairing saved · OT not yet approved
+กรุณาเลือกคู่สแกน|Please select scan pairs
+กรุณาเลือกเวลาสแกนจริงของพนักงานคนนี้|Select actual scans for this employee
+เวลาออกต้องหลังเวลาเข้าและห่างกันไม่เกิน 24 ชั่วโมง|Exit must follow entry within 24 hours
+บันทึกได้หนึ่งคู่ต่อวันเริ่มงาน|One pair per work start date
+คู่สแกนทับกันหรือใช้สแกนซ้ำ|Pairs overlap or reuse a scan
+คู่สแกนทับเวลาที่บันทึกไว้|Pair overlaps a saved correction
 Service ค่าแรง|Wage Service
 Service OT|OT Service
 ค่าจ้างฐาน / วัน|Base daily wage

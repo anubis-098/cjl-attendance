@@ -21,7 +21,6 @@ AGENTS.md
 
 # Private source files, exports, reports and backups
 /examples/
-/WebAtten.txt
 /docs/examples-analysis.md
 /docs/payroll-analysis.md
 /backups/

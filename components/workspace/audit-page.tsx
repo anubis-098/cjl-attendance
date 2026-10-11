@@ -61,7 +61,7 @@ export default function AuditPage() {
       </div>
       <section className="panel audit-panel">
         <div className="filters">
-          <label className="search">
+          <label className="search" data-filter-active={Boolean(search.trim())}>
             <Search size={15} />
             <input
               aria-label={t("ค้นหาประวัติ")}
@@ -79,6 +79,7 @@ export default function AuditPage() {
             <input
               aria-label={t("วันที่ทำงาน")}
               type="date"
+              data-filter-active={Boolean(date)}
               value={date}
               onChange={(e) => {
                 setDate(e.target.value);

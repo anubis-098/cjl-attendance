@@ -28,6 +28,7 @@ export type Punch = {
   punch_type: "IN" | "OUT" | "UNKNOWN";
 };
 export type Review = {
+  manualPair?: boolean;
   otRulesVersion?: number;
   deductOTBreak?: boolean;
   inTime?: string;
@@ -168,10 +169,10 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
     .filter((p) => p.punch_type !== "IN" && p.ms >= end && p.ms !== entry?.ms)
     .at(-1);
   const inMs = review?.inTime
-    ? Date.parse(review.inTime + ":00+07:00")
+    ? punchTime(review.inTime)
     : entry?.ms;
   const outMs = review?.outTime
-    ? Date.parse(review.outTime + ":00+07:00")
+    ? punchTime(review.outTime)
     : exit?.ms;
   const holiday = Object.hasOwn(holidayLabels, code);
   const scheduleConflict =
@@ -237,10 +238,10 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
       )
       .at(-1);
     const legacyIn = review.inTime
-      ? punchTime(review.inTime + ":00")
+      ? punchTime(review.inTime)
       : legacyEntry?.ms;
     const legacyOut = review.outTime
-      ? punchTime(review.outTime + ":00")
+      ? punchTime(review.outTime)
       : legacyExit?.ms;
     approvalNeedsReview =
       (inMs !== undefined && outMs !== undefined &&

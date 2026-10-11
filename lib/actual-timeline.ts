@@ -11,6 +11,10 @@ import { floorOT, workTime } from "./work-time";
 import { normalizeDayCode, nonWorkingCodes } from "./day-codes";
 
 const HOUR = 3600000;
+const clockGap = (a: number, b: number) => {
+  const gap = Math.abs(a - b) % (24 * HOUR);
+  return Math.min(gap, 24 * HOUR - gap);
+};
 export type ActualInterval = {
   id: string;
   start: number;
@@ -43,17 +47,13 @@ export function pairActualScans(punches: Punch[]): ActualInterval[] {
   // Equal-score alternatives can move an open final scan to the start of an
   // otherwise regular series. Consistent neighbouring entry/exit times resolve
   // that tie; isolated, overlapping and changed-pair warnings remain intact.
-  const clockGap = (a: number, b: number) => {
-    const gap = Math.abs(a - b) % (24 * HOUR);
-    return Math.min(gap, 24 * HOUR - gap);
-  };
   for (let i = 0; i < intervals.length; i++) {
     const current = intervals[i];
     if (current.estimated || current.reason !== "คู่สแกนกำกวม โปรดตรวจสอบ") continue;
     const neighbours = intervals.slice(Math.max(0, i - 2), i + 3).filter(other => other !== current && !other.estimated &&
       other.reason !== "ช่วงสแกนติดกันหรือทับกัน ไม่ยืนยันว่าเป็นสแกนออก โปรดตรวจสอบ" &&
       Math.abs(other.start - current.start) <= 4 * 24 * HOUR &&
-      clockGap(other.start, current.start) <= 2 * HOUR && clockGap(other.end, current.end) <= 3 * HOUR);
+      clockGap(other.start, current.start) <= 3 * HOUR && clockGap(other.end, current.end) <= 3 * HOUR);
     if (neighbours.length >= 2) {
       current.uncertain = false;
       current.reason = "จับคู่สแกนสอดคล้องกับเวลาเข้า–ออกของวันใกล้เคียง";
@@ -82,6 +82,30 @@ export function pairActualScans(punches: Punch[]): ActualInterval[] {
 }
 
 function inferActualScans(punches: Punch[]): ActualInterval[] {
+  const baseline = inferScanSequence(punches);
+  const times = [...new Set(punches.map(p => punchTime(p.punch_timestamp)))]
+    .filter(Number.isFinite).sort((a, b) => a - b);
+  const supportedEntries = new Set<number>();
+  const recent: ActualInterval[] = [];
+  let boundary = -Infinity, cursor = 0;
+  for (let i = 0; i < times.length; i++) {
+    // No allowed pair can cross this gap. Only use completed earlier blocks:
+    // the open current block must not teach itself a reversed entry/exit pattern.
+    if (i && times[i] - times[i - 1] > 20 * HOUR) boundary = times[i];
+    while (cursor < baseline.length && baseline[cursor].end < boundary) {
+      const prior = baseline[cursor++];
+      if (!prior.estimated && !prior.uncertain) recent.push(prior);
+      if (recent.length > 3) recent.shift();
+    }
+    const evidence = recent.filter(prior => times[i] - prior.start <= 7 * 24 * HOUR);
+    if (evidence.length >= 2 && evidence.slice(-2).every(prior =>
+      clockGap(times[i], prior.start) <= 2 * HOUR &&
+      clockGap(times[i], prior.end) >= 4 * HOUR)) supportedEntries.add(times[i]);
+  }
+  return supportedEntries.size ? inferScanSequence(punches, supportedEntries) : baseline;
+}
+
+function inferScanSequence(punches: Punch[], supportedEntries = new Set<number>()): ActualInterval[] {
   const sorted = punches
     .map((p) => ({ ms: punchTime(p.punch_timestamp), type: p.punch_type }))
     .filter((p) => Number.isFinite(p.ms))
@@ -114,12 +138,19 @@ function inferActualScans(punches: Punch[]): ActualInterval[] {
       if (b.type === "IN" || (j > i + 1 && b.ms - scans[i + 1].ms > 3 * HOUR)) break;
       const hours = (b.ms - a.ms) / HOUR;
       const explicit = a.type === "IN" && b.type === "OUT";
-      if (hours > (explicit ? 20 : 16)) break;
-      if (hours >= (explicit ? 0.1 : 6) && hours <= (explicit ? 20 : 16)) {
+      // Long work is possible, but do not globally turn every overnight rest
+      // into a candidate shift: require independent recent entry evidence.
+      const maxHours = explicit || supportedEntries.has(a.ms) ? 20 : 16;
+      if (hours > maxHours) break;
+      if (hours >= (explicit ? 0.1 : 6) && hours <= maxHours) {
         // A normal shift and a shift extended by OT are equally plausible.
         // Preferring exactly nine hours can treat overnight rest as work and
         // discard a real entry to shift every following pair by one scan.
-        const durationPenalty = Math.max(0, 8 - hours, hours - 14) / 2;
+        // A long period supported by recent, independently completed
+        // entry patterns is not less plausible than the intervening rest.
+        // Keep the original fallback when that evidence is absent.
+        const longPenalty = supportedEntries.has(a.ms) ? 0 : hours - 14;
+        const durationPenalty = Math.max(0, 8 - hours, longPenalty) / 2;
         const paired = (explicit ? 0 : durationPenalty) + (j - i - 1) * 0.15 + costs[j + 1];
         // On an equal score keep the earliest complete pair, rather than
         // moving an equally plausible missing scan to the start of the run.
@@ -158,18 +189,18 @@ function inferActualScans(punches: Punch[]): ActualInterval[] {
       const exit = a.type === "OUT";
       intervals.push({
         id: `${a.ms}-single`,
-        start: exit ? a.ms - 8 * HOUR : a.ms,
-        end: exit ? a.ms : a.ms + 8 * HOUR,
+        start: a.ms,
+        end: a.ms,
         inMs: exit ? undefined : a.ms,
         outMs: exit ? a.ms : undefined,
         estimated: true,
         uncertain: true,
         reviewed: false,
         reason: exit
-          ? "พบสแกนออกอย่างเดียว คาดเวลาเข้าย้อนหลัง 8 ชม."
+          ? "พบสแกนออกอย่างเดียว ยังไม่มีคู่"
           : a.type === "IN"
-            ? "พบสแกนเข้าอย่างเดียว คาดเวลาออกอีก 8 ชม."
-            : "สแกนเดี่ยวไม่ทราบเข้า/ออก แสดงช่วงคาดการณ์ 8 ชม.",
+            ? "พบสแกนเข้าอย่างเดียว ยังไม่มีคู่"
+            : "สแกนเดี่ยวยังไม่ระบุเข้า/ออก กรุณาจับคู่",
       });
       i++;
     }
@@ -221,15 +252,15 @@ export function buildActualTimeline(
         shift: s,
         interval: {
           id: `review-${keyOf(s)}`,
-          start: inMs ?? outMs! - 8 * HOUR,
-          end: outMs ?? inMs! + 8 * HOUR,
+          start: inMs ?? outMs!,
+          end: outMs ?? inMs!,
           inMs,
           outMs,
           estimated,
           uncertain: estimated,
           reviewed: true,
           reason: estimated
-            ? "เวลาแก้ไขยังไม่ครบ แสดงช่วงคาดการณ์ 8 ชม."
+            ? "เวลาแก้ไขยังไม่ครบ กรุณาจับคู่"
             : "เวลาที่หัวหน้างานแก้ไข",
         },
       });
@@ -242,6 +273,7 @@ export function buildActualTimeline(
     if (corrected.length) {
       const raw = pairActualScans(sourcePunches);
       for (const correction of corrected) {
+        if (reviews[keyOf(correction.shift)]?.manualPair) continue;
         const c = correction.interval;
         if (c.inMs === undefined || c.outMs === undefined) continue;
         const longer = raw.find(a => !a.estimated && !a.uncertain && a.inMs !== undefined && a.outMs !== undefined &&

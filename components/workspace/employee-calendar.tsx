@@ -37,6 +37,7 @@ import {
 import ActualCard, { ActualCalendarLegend } from "./actual-card";
 const ReviewDrawer = dynamic(() => import("./review-drawer"));
 const ShiftEditor = dynamic(() => import("./shift-editor"));
+const ManualScanPairing = dynamic(() => import("./manual-scan-pairing"), { ssr: false });
 const CompanyHolidayModal = dynamic(() => import("./company-holiday-modal"));
 const OTRequestModal = dynamic(() => import("./ot-request-popover"), {
   ssr: false,
@@ -80,6 +81,7 @@ export default function EmployeeCalendar({
   const [saving, setSaving] = useState(false);
   const [holidayMode, setHolidayMode] = useState(false);
   const [shiftMode, setShiftMode] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
   const [holidayDates, setHolidayDates] = useState<string[]>([]);
   const [companyOpen, setCompanyOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
@@ -92,6 +94,9 @@ export default function EmployeeCalendar({
   const [holidayCode, setHolidayCode] = useState("H");
   const savingRef = useRef(false);
   useEffect(() => {
+    if (selecting || holidayMode || shiftMode || requestOpen) setManualMode(false);
+  }, [selecting, holidayMode, shiftMode, requestOpen]);
+  useEffect(() => {
     setCompanyOpen(false);
     setRequestOpen(false);
     setRequestDay(null);
@@ -100,6 +105,7 @@ export default function EmployeeCalendar({
     setHolidayMode(false);
     setShiftMode(false);
     setHolidayDates([]);
+    setManualMode(false);
   }, [month, employeeId]);
   const close = useCallback(() => setActive(null), []);
   const first = `${month}-01`;
@@ -280,6 +286,7 @@ export default function EmployeeCalendar({
             aria-label={t("เลือกเดือน")}
             type="month"
             disabled={saving}
+            data-filter-active={Boolean(month)}
             value={month}
             onChange={(e) => {
               if (/^\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value))
@@ -341,6 +348,11 @@ export default function EmployeeCalendar({
           >
             {t(shiftMode ? "ยกเลิกเปลี่ยนกะ" : "เปลี่ยนกะ")}
           </button>
+          <button className={`button ${manualMode ? "calendar-cancel" : ""}`} disabled={saving || !employee}
+            aria-pressed={manualMode} onClick={() => {
+              setManualMode(!manualMode); setSelecting(false); setSelected([]); setHolidayMode(false);
+              setShiftMode(false); setRequestOpen(false); setRequestDay(null); setHolidayDates([]); preview.close();
+            }}>{t(manualMode ? "ยกเลิกจับคู่สแกน" : "จับคู่สแกนเอง")}</button>
           <button
             className="button ot-request-toggle"
             disabled={saving}
@@ -526,6 +538,9 @@ export default function EmployeeCalendar({
           {t(" ชม.")}
         </p>
         <ActualCalendarLegend />
+        {manualMode && employee ? <ManualScanPairing key={`${employeeId}-${month}`}
+          employeeId={employeeId} deviceId={employee.device_emp_id} days={days} month={month}
+          onBusy={setSaving} onClose={() => setManualMode(false)} /> : <>
         <div className="employee-month-scroll">
           <div className="employee-month-grid">
             <div className="month-weekdays">
@@ -650,7 +665,7 @@ export default function EmployeeCalendar({
                   {events.map((e) => (
                     <div
                       key={e.id}
-                      className={`month-shift status-${e.actual ? actualCardStatus(e.actual, e.shift, data.reviews[keyOf(e.shift)]?.deductOTBreak, e.result.approved && actualMatchesResult(actualTimeline.get(keyOf(e.shift)), e.result)) : e.plannedOnly ? "planned" : e.pending ? "pending" : e.result.status.toLowerCase()} ${selecting ? "selecting-shift" : ""} ${selecting && selected.includes(keyOf(e.shift)) && eligibleKeys.has(keyOf(e.shift)) ? "selected-shift" : ""}`}
+                      className={`month-shift ${e.actual?.estimated && e.start === e.end ? "scan-marker" : ""} status-${e.actual ? actualCardStatus(e.actual, e.shift, data.reviews[keyOf(e.shift)]?.deductOTBreak, e.result.approved && actualMatchesResult(actualTimeline.get(keyOf(e.shift)), e.result)) : e.plannedOnly ? "planned" : e.pending ? "pending" : e.result.status.toLowerCase()} ${selecting ? "selecting-shift" : ""} ${selecting && selected.includes(keyOf(e.shift)) && eligibleKeys.has(keyOf(e.shift)) ? "selected-shift" : ""}`}
                       style={{
                         gridColumn: `${e.first + 1} / ${e.last + 2}`,
                         gridRow: e.lane + 2,
@@ -767,6 +782,7 @@ export default function EmployeeCalendar({
             " วันหยุดตามรหัส H / H8 / PH / PH8 ในตารางกะ · 1 ช่อง = 24 ชั่วโมง · คลิกแถบกะเพื่อดูรายละเอียด",
           )}
         </p>
+        </>}
       </section>
       {active && (
         <ReviewDrawer
