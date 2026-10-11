@@ -1,14 +1,15 @@
-import { guard } from "@/lib/auth";
+import { guard, currentSession } from "@/lib/auth";
+import { visibleWorkspace } from "@/lib/permissions";
 import { readWorkspace, updateEmployeeStore } from "@/lib/database";
 import { keyOf, reconcile, Review } from "@/lib/engine";
 import { punchTime } from "@/lib/shift-window";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET() {
-  const denied = await guard(false, false);
+  const denied = await guard(false, false, true);
   if (denied) return denied;
   try {
-    return Response.json(await readWorkspace());
+    return Response.json(visibleWorkspace(await readWorkspace(), (await currentSession())!), { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
     console.error(e);
     return Response.json(

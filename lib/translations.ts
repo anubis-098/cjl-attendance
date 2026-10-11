@@ -1,5 +1,12 @@
 // UI copy only. Employee names, imported values and free-form notes are not translated.
 const entries = `
+Guest ดูเวลาเท่านั้น · Employee ดูเฉพาะตนเอง · ทั้งสองระดับไม่เห็นข้อมูลการเงิน|Guest views attendance; Employee views only their own records. Neither can view financial data.
+รหัสพนักงานที่ผูกบัญชี|Linked employee ID
+ดูข้อมูลเท่านั้น · ไม่มีสิทธิ์แก้ไขหรือดูข้อมูลการเงิน|Read only · No editing or financial access
+เลือกพนักงานเพื่อดูเวลาทำงานและสถานะ OT|Select an employee to view attendance and OT status
+กรุณาระบุรหัสพนักงานสำหรับ Employee|An employee ID is required for Employee accounts
+ไม่พบรหัสพนักงานในฐานข้อมูล|Employee ID was not found
+บัญชีนี้ไม่มีสิทธิ์ดำเนินการ|This account does not have permission
 สถานะคาบเวลาสแกน|Scan period status
 สแกนไม่ครบ / กำกวม|Incomplete / ambiguous scans
 จับคู่สแกนเอง|Pair scans manually

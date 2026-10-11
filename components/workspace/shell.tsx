@@ -18,6 +18,8 @@ import type { ReactNode } from "react";
 import { useWorkspace } from "./provider";
 import { useAccount } from "../auth-provider";
 import LanguageSwitcher from "../language-switcher";
+import { canManageAttendance, roleLabels } from "@/lib/permissions";
+import ReadOnlyWorkspace from "./read-only-workspace";
 export default function Shell({ children }: { children: ReactNode }) {
   const { t, getLocale } = useTranslation();
   const { toast, setToast } = useWorkspace();
@@ -70,7 +72,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           ["/approvals", "รายการรออนุมัติ", ShieldCheck],
           ["/payroll", "คำนวณเงินโอที", Banknote],
           ["/audit-log", "ประวัติการตรวจสอบ", History],
-        ].map(([href, label, Icon]) => {
+        ].filter(([href]) => canManageAttendance(account.role) || href === "/attendance").map(([href, label, Icon]) => {
           const Component = Icon as typeof CalendarDays;
           const active =
             pathname === href ||
@@ -105,7 +107,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           <div>
             <b>{account.displayName}</b>
             <small>
-              {t(account.role === "super_admin" ? "Super Admin" : "Supervisor")}
+              {t(roleLabels[account.role])}
             </small>
           </div>
           <Link href="/account" aria-label={t("ตั้งค่าบัญชี")}>
@@ -152,7 +154,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main>
-          {children}
+          {!canManageAttendance(account.role) && pathname !== "/account" ? <ReadOnlyWorkspace /> : children}
           <footer className="page-footer">
             <span>
               <ShieldCheck size={13} />

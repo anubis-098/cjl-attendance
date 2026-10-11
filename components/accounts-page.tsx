@@ -3,6 +3,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useCallback, useEffect, useId, useState } from "react";
 import { useAccount } from "./auth-provider";
 import { CircleAlert } from "lucide-react";
+import { roleLabels, type AccountRole } from "@/lib/permissions";
 function MissingEmail() {
   const { t, getLocale } = useTranslation();
   const id = useId();
@@ -27,6 +28,7 @@ type Row = {
   displayName: string;
   email: string;
   role: string;
+  employeeId: string;
   active: boolean;
   version: number;
 };
@@ -36,6 +38,7 @@ const blank = {
   displayName: "",
   email: "",
   role: "supervisor",
+  employeeId: "",
   active: true,
   version: 0,
   password: "",
@@ -94,7 +97,7 @@ export default function AccountsPage() {
           <h1>{t("จัดการบัญชีและสิทธิ์")}</h1>
           <p>
             {t(
-              "Super Admin จัดการบัญชีได้ · Supervisor ใช้งาน Attendance อนุมัติ OT และเข้าถึงข้อมูลการเงิน / Export ได้",
+              "Guest ดูเวลาเท่านั้น · Employee ดูเฉพาะตนเอง · ทั้งสองระดับไม่เห็นข้อมูลการเงิน",
             )}
           </p>
         </div>
@@ -168,8 +171,11 @@ export default function AccountsPage() {
               >
                 <option value="supervisor">{t("Supervisor")}</option>
                 <option value="super_admin">{t("Super Admin")}</option>
+                <option value="guest">Guest</option>
+                <option value="employee">Employee</option>
               </select>
             </label>
+            {form.role === "employee" && <label>{t("รหัสพนักงานที่ผูกบัญชี")}<input required maxLength={100} value={form.employeeId} onChange={e => setForm({ ...form, employeeId: e.target.value })} placeholder="BE000609" /></label>}
             <label>
               {t(form.id ? "รหัสผ่านใหม่ (เว้นว่างเพื่อใช้เดิม)" : "รหัสผ่าน")}
               <input
@@ -223,6 +229,7 @@ export default function AccountsPage() {
               <th>{t("ชื่อแสดง")}</th>
               <th>{t("Email")}</th>
               <th>{t("สิทธิ์")}</th>
+              <th>{t("รหัสพนักงาน")}</th>
               <th>{t("สถานะ")}</th>
               <th>{t("จัดการ")}</th>
             </tr>
@@ -234,8 +241,9 @@ export default function AccountsPage() {
                 <td>{row.displayName}</td>
                 <td>{row.email || <MissingEmail />}</td>
                 <td>
-                  {t(row.role === "super_admin" ? "Super Admin" : "Supervisor")}
+                  {t(roleLabels[row.role as AccountRole])}
                 </td>
+                <td>{row.employeeId || "—"}</td>
                 <td>{t(row.active ? "ใช้งาน" : "ปิดใช้งาน")}</td>
                 <td>
                   <div className="account-actions">

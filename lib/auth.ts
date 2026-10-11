@@ -1,8 +1,9 @@
 import { cookies, headers } from "next/headers";
 import { employeeDB } from "./database";
 import { verifyToken } from "./auth-crypto";
+import { canManageAttendance, type AccountRole } from "./permissions";
 export const SESSION_COOKIE = "cj_session";
-export type Account = { id: string; username: string; displayName: string; role: "super_admin" | "supervisor"; expiresAt: number };
+export type Account = { id: string; username: string; displayName: string; role: AccountRole; employeeId?: string | null; expiresAt: number };
 export async function jwtSecret() {
   const { rows } = await employeeDB.query("SELECT jwt_secret FROM auth_settings WHERE id=1");
   if (!rows[0]) throw Error("ยังไม่ได้ตั้งค่าบัญชีเริ่มต้น");
@@ -14,7 +15,7 @@ export async function currentSession(): Promise<(Account & { sessionId: string }
   const claims = verifyToken(token, await jwtSecret());
   if (!claims) return null;
   const { rows } = await employeeDB.query(
-    `SELECT u.id,u.username,u.display_name AS "displayName",u.role FROM app_users u
+    `SELECT u.id,u.username,u.display_name AS "displayName",u.role,u.employee_id AS "employeeId" FROM app_users u
      JOIN auth_sessions s ON s.user_id=u.id WHERE u.id=$1 AND s.id=$2 AND u.active AND s.user_version=u.version AND s.expires_at>now()`,
     [claims.sub, claims.jti],
   );
@@ -27,11 +28,12 @@ export async function checkOrigin() {
   if (!origin) return true;
   try { return new URL(origin).host === host; } catch { return false; }
 }
-export async function guard(admin = false, mutation = false): Promise<Response | null> {
+export async function guard(admin = false, mutation = false, allowViewer = false): Promise<Response | null> {
   if (mutation && !(await checkOrigin())) return Response.json({ error: "ไม่อนุญาตคำขอจากเว็บไซต์อื่น" }, { status: 403 });
   const user = await currentSession();
   if (!user) return Response.json({ error: "กรุณาล็อกอินใหม่" }, { status: 401 });
   if (admin && user.role !== "super_admin") return Response.json({ error: "เฉพาะ Super Admin เท่านั้น" }, { status: 403 });
+  if (!allowViewer && !canManageAttendance(user.role)) return Response.json({ error: "บัญชีนี้ไม่มีสิทธิ์ดำเนินการ" }, { status: 403 });
   return null;
 }
 export async function secureCookie() {

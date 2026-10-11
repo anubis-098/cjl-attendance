@@ -3,6 +3,8 @@ import { useTranslation } from "@/lib/i18n";
 import { editableDayCodes, leaveCodes, dayCodeLabels } from "@/lib/day-codes";
 import { Check } from "lucide-react";
 import EmployeePayrollSettings from "./employee-payroll-settings";
+import { useAccount } from "../auth-provider";
+import { canManageAttendance } from "@/lib/permissions";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -59,6 +61,7 @@ export default function EmployeeCalendar({
 }) {
   const { t, getLocale } = useTranslation();
   const now = useCalendarClock();
+  const canEdit = canManageAttendance(useAccount().role);
   const preview = useShiftPreview();
   const {
     data,
@@ -255,7 +258,7 @@ export default function EmployeeCalendar({
             onClose={closeRequest}
           />
         )}
-        <EmployeePayrollSettings employeeId={employeeId} month={month} />
+        {canEdit && <EmployeePayrollSettings employeeId={employeeId} month={month} />}
         <div className="month-controls">
           <button
             className="button"
@@ -300,7 +303,7 @@ export default function EmployeeCalendar({
           >
             {t("เดือนนี้")}
           </button>
-          <button
+          {canEdit && <><button
             className={`button ${selecting ? "calendar-cancel" : ""}`}
             aria-pressed={selecting}
             disabled={saving}
@@ -369,7 +372,7 @@ export default function EmployeeCalendar({
             }}
           >
             {t(requestOpen ? "เสร็จสิ้นการขอ OT" : "ขอ OT")}
-          </button>
+          </button></>}
         </div>
         {requestOpen && (
           <p className="ot-request-instruction">
@@ -685,7 +688,7 @@ export default function EmployeeCalendar({
                         onClick={() => {
                           preview.close();
                           setActiveActual(e.actual);
-                          setActive(e.shift);
+                          if (canEdit) setActive(e.shift);
                         }}
                         aria-label={t(
                           `รายละเอียด ${e.shift.date} ${e.shift.shift_code}`,

@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET() {
   const denied = await guard(true); if (denied) return denied;
-  const { rows } = await employeeDB.query(`SELECT id,username,display_name AS "displayName",email,role,active,version,created_at AS "createdAt" FROM app_users ORDER BY created_at`);
+  const { rows } = await employeeDB.query(`SELECT id,username,display_name AS "displayName",email,role,COALESCE(employee_id,'') AS "employeeId",active,version,created_at AS "createdAt" FROM app_users ORDER BY created_at`);
   const history = await employeeDB.query("SELECT actor,action,username,created_at FROM account_audit ORDER BY id DESC LIMIT 100");
   return Response.json({ accounts: rows, history: history.rows }, { headers: { "Cache-Control": "no-store" } });
 }
@@ -20,6 +20,7 @@ async function mutate(request: Request, method: string) {
     let passwordHash: string | undefined;
     let revoked = false;
     let email: string | undefined;
+    let employeeId: string | null = null;
     if (method !== "DELETE") {
       if (b.email !== undefined) {
         if (typeof b.email !== "string") throw Error("รูปแบบ Email ไม่ถูกต้อง");
@@ -29,7 +30,11 @@ async function mutate(request: Request, method: string) {
       }
       if (typeof b.username !== "string" || !/^[a-zA-Z0-9._-]{3,64}$/.test(b.username) ||
         typeof b.displayName !== "string" || !b.displayName.trim() || b.displayName.length > 100 ||
-        !["super_admin", "supervisor"].includes(b.role) || typeof b.active !== "boolean") throw Error("กรุณาระบุชื่อผู้ใช้ ชื่อแสดง และสิทธิ์ให้ถูกต้อง");
+        !["super_admin", "supervisor", "guest", "employee"].includes(b.role) || typeof b.active !== "boolean") throw Error("กรุณาระบุชื่อผู้ใช้ ชื่อแสดง และสิทธิ์ให้ถูกต้อง");
+      if (b.role === "employee") {
+        if (typeof b.employeeId !== "string" || !b.employeeId.trim() || b.employeeId.length > 100) throw Error("กรุณาระบุรหัสพนักงานสำหรับ Employee");
+        employeeId = b.employeeId.trim();
+      }
       if (typeof b.password !== "string" || b.password.length > 256 || (method === "POST" || b.password) && b.password.length < 6) throw Error("รหัสผ่านต้องมี 6–256 ตัวอักษร");
       if (b.password) passwordHash = await hashPassword(b.password);
     }
@@ -37,6 +42,7 @@ async function mutate(request: Request, method: string) {
     await c.query("SELECT pg_advisory_xact_lock(73125009)");
     const allowed = await c.query(`SELECT 1 FROM app_users u JOIN auth_sessions s ON s.user_id=u.id WHERE u.id=$1 AND s.id=$2 AND u.active AND u.role='super_admin' AND u.version=s.user_version AND s.expires_at>now()`, [actor.id, actor.sessionId]);
     if (!allowed.rowCount) throw Error("ไม่มีสิทธิ์จัดการบัญชีแล้ว กรุณาล็อกอินใหม่");
+    if (employeeId && !(await c.query("SELECT 1 FROM employee_master WHERE employee_id=$1", [employeeId])).rowCount) throw Error("ไม่พบรหัสพนักงานในฐานข้อมูล");
     let username = b.username?.toLowerCase();
     if (method !== "POST") {
       const { rows } = await c.query("SELECT * FROM app_users WHERE id=$1 FOR UPDATE", [b.id]);
@@ -53,13 +59,13 @@ async function mutate(request: Request, method: string) {
         await c.query("DELETE FROM app_users WHERE id=$1", [b.id]);
       } else {
         revoked = Boolean(passwordHash) || username !== old.username ||
-          b.displayName.trim() !== old.display_name || b.role !== old.role || b.active !== old.active;
-        await c.query(`UPDATE app_users SET username=$2,display_name=$3,role=$4,active=$5,password_hash=COALESCE($6,password_hash),email=$7,version=version+1 WHERE id=$1`, [b.id, username, b.displayName.trim(), b.role, b.active, passwordHash, email ?? old.email]);
+          b.displayName.trim() !== old.display_name || b.role !== old.role || b.active !== old.active || employeeId !== old.employee_id;
+        await c.query(`UPDATE app_users SET username=$2,display_name=$3,role=$4,active=$5,password_hash=COALESCE($6,password_hash),email=$7,employee_id=$8,version=version+1 WHERE id=$1`, [b.id, username, b.displayName.trim(), b.role, b.active, passwordHash, email ?? old.email, employeeId]);
         if (revoked) await c.query("DELETE FROM auth_sessions WHERE user_id=$1", [b.id]);
         else await c.query("UPDATE auth_sessions SET user_version=$2 WHERE user_id=$1 AND user_version=$3", [b.id, old.version + 1, old.version]);
       }
     } else {
-      await c.query("INSERT INTO app_users(id,username,display_name,password_hash,role,active,email) VALUES($1,$2,$3,$4,$5,$6,$7)", [randomUUID(), username, b.displayName.trim(), passwordHash, b.role, b.active, email ?? ""]);
+      await c.query("INSERT INTO app_users(id,username,display_name,password_hash,role,active,email,employee_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)", [randomUUID(), username, b.displayName.trim(), passwordHash, b.role, b.active, email ?? "", employeeId]);
     }
     await c.query("INSERT INTO account_audit(actor,action,username) VALUES($1,$2,$3)", [actor.username, method === "POST" ? "สร้างบัญชี" : method === "DELETE" ? "ลบบัญชี" : revoked ? "แก้ไขบัญชีและยกเลิกเซสชันเดิม" : "บันทึก Email โดยคงเซสชันเดิม", username]);
     await c.query("COMMIT");

@@ -2,7 +2,7 @@ import { guard, currentSession } from "@/lib/auth";
 import { hashPassword, verifyPassword } from "@/lib/auth-crypto";
 import { employeeDB } from "@/lib/database";
 export async function POST(request: Request) {
-  const denied = await guard(false, true); if (denied) return denied;
+  const denied = await guard(false, true, true); if (denied) return denied;
   const user = (await currentSession())!;
   const { currentPassword, password } = await request.json();
   if (typeof currentPassword !== "string" || currentPassword.length > 256 || typeof password !== "string" || password.length < 6 || password.length > 256) return Response.json({ error: "รหัสผ่านใหม่ต้องมี 6–256 ตัวอักษร" }, { status: 400 });

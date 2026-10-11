@@ -4,7 +4,9 @@ CREATE TABLE IF NOT EXISTS app_users (
   display_name text NOT NULL,
   password_hash text NOT NULL,
   email text NOT NULL DEFAULT '',
-  role text NOT NULL CHECK (role IN ('super_admin','supervisor')),
+  role text NOT NULL CHECK (role IN ('super_admin','supervisor','guest','employee')),
+  employee_id text,
+  CONSTRAINT app_users_employee_link_check CHECK (role <> 'employee' OR (employee_id IS NOT NULL AND length(trim(employee_id)) > 0)),
   active boolean NOT NULL DEFAULT true,
   version integer NOT NULL DEFAULT 1,
   created_at timestamptz NOT NULL DEFAULT now()
