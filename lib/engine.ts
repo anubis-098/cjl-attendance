@@ -47,6 +47,7 @@ export type Audit = {
   after: string;
 };
 export type Data = {
+  evidenceImageCounts?: Record<string, number>;
   employeePayrollSettings?: Record<string, Record<string, { dailyWage: number }>>;
   calendarRemarks?: { date: string; employeeId: string; text: string }[];
   companyHolidays?: string[];

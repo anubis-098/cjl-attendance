@@ -17,6 +17,7 @@ export function visibleWorkspace<T extends { data: Data; employees: { employee_i
     punches: workspace.data.punches.filter(p => !own || devices.has(p.device_emp_id)),
     reviews: Object.fromEntries(Object.entries(workspace.data.reviews).filter(([key]) => matches(key.split("|")[0]))),
     audit: [],
+    evidenceImageCounts: Object.fromEntries(Object.entries(workspace.data.evidenceImageCounts || {}).filter(([key]) => matches(key.split("|")[0]))),
     companyHolidays: workspace.data.companyHolidays,
     calendarRemarks: workspace.data.calendarRemarks?.filter(r => !r.employeeId || matches(r.employeeId)),
     shiftOverrides: Object.fromEntries(Object.entries(workspace.data.shiftOverrides || {}).filter(([key]) => matches(key.split("|")[0]))),

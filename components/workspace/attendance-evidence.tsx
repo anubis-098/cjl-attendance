@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Paperclip, Download, Trash2 } from "lucide-react";
 import { useAccount } from "../auth-provider";
 import { useWorkspace } from "./provider";
+import EvidenceImageViewer from "./evidence-image-viewer";
 import {
   EVIDENCE_MAX_SIZE,
   type AttendanceEvidence,
@@ -23,12 +24,11 @@ export default function EvidencePanel({
   const account = useAccount();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [items, setItems] = useState<AttendanceEvidence[]>([]);
+  const [viewing, setViewing] = useState<AttendanceEvidence | null>(null);
   const [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const [file, setFile] = useState<File | null>(null),
-    [source, setSource] = useState("employee"),
-    [provider, setProvider] = useState(""),
     [note, setNote] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const url = `/api/attendance-evidence?${new URLSearchParams({ employeeId, date })}`;
@@ -61,8 +61,7 @@ export default function EvidencePanel({
       const form = new FormData();
       form.set("employeeId", employeeId);
       form.set("date", date);
-      form.set("source", source);
-      form.set("providerName", provider);
+      form.set("source", "supervisor");
       form.set("note", note);
       form.set("file", file);
       const r = await fetch("/api/attendance-evidence", {
@@ -140,7 +139,7 @@ export default function EvidencePanel({
             </small>
             {item.note && <p>{item.note}</p>}
             {item.content_type.startsWith("image/") && (
-              <a href={`/api/attendance-evidence/${item.id}?preview=1`} target="_blank" rel="noopener noreferrer">
+              <button type="button" className="evidence-preview-button" aria-label={`${t("เปิดภาพเต็ม")} ${item.filename}`} onClick={()=>setViewing(item)}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   className="evidence-preview"
@@ -148,7 +147,7 @@ export default function EvidencePanel({
                     alt={`${t("หลักฐาน")} ${item.filename}`}
                   loading="lazy"
                 />
-              </a>
+              </button>
             )}
             <a
               href={`/api/attendance-evidence/${item.id}`}
@@ -170,25 +169,6 @@ export default function EvidencePanel({
       <details>
         <summary>{t("เพิ่มหลักฐาน (ไม่บังคับ)")}</summary>
         <fieldset disabled={busy || loading || items.length >= 10}>
-          <label className="field">
-            {t("หลักฐานจาก")}
-            <select
-              aria-label={t("หลักฐานจาก")}
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-            >
-              <option value="employee">{t("พนักงาน")}</option>
-              <option value="supervisor">{t("หัวหน้างาน")}</option>
-            </select>
-          </label>
-          <label className="field">
-            {t("ชื่อผู้ให้หลักฐาน (ไม่บังคับ)")}
-            <input
-              maxLength={200}
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-            />
-          </label>
           <label className="field">
             {t("คำอธิบายหลักฐาน (ไม่บังคับ)")}
             <textarea
@@ -229,6 +209,7 @@ export default function EvidencePanel({
           {t(error)}
         </p>
       )}
+      {viewing && <EvidenceImageViewer item={viewing} onClose={()=>setViewing(null)}/>}
     </section>
   );
 }

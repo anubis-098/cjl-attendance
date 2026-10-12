@@ -11,6 +11,8 @@ import { useWorkspace } from "./provider";
 import Pagination from "./pagination";
 import FingerprintServicePanel from "./fingerprint-service-panel";
 import type { FingerprintImportSummary } from "@/lib/fingerprint-import";
+import { FileUp, ChevronDown } from "lucide-react";
+import EmployeeCreateForm from "./employee-create-form";
 type ScanRow = { employee_id: string; scan_date: string; scan_time: string };
 export default function SourceDataPage({
   kind,
@@ -130,8 +132,9 @@ export default function SourceDataPage({
         </Link>
       </div>
       {!master && <FingerprintServicePanel />}
-      <section className="panel source-import">
-        <h2>{t(master ? "Import File" : "นำเข้าไฟล์ด้วยตนเอง")}</h2>
+      <details className="panel employee-tools" open={master ? undefined : true}>
+        <summary><span className="employee-tool-icon"><FileUp size={21}/></span><span>{t(master ? "Import File" : "นำเข้าไฟล์ด้วยตนเอง")}</span><ChevronDown size={18} className="employee-tool-chevron"/></summary>
+        <div className="employee-tool-body"><section className="source-import">
         <p>
           {t(
             master
@@ -182,7 +185,8 @@ export default function SourceDataPage({
             {t(error)}
           </p>
         )}
-      </section>
+      </section></div></details>
+      {master && <EmployeeCreateForm onCreated={() => {setPage(1);setSearch("");setEmployeeFilters({});setVersion(v=>v+1);}} />}
       {!master && importResult && (
         <section className="panel" role="status" style={{ padding: 20 }}>
           <h2>

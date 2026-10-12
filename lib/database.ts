@@ -55,6 +55,8 @@ export async function readWorkspace(transaction?: PoolClient) {
       )
     ).rows;
     const data: Data = { ...emptyData(), ...state.data, punches };
+    const imageCounts = await c.query<{ key: string; count: string }>("SELECT employee_id || '|' || to_char(shift_date,'YYYY-MM-DD') AS key, count(*) AS count FROM attendance_evidence WHERE content_type IN ('image/jpeg','image/png','image/webp') GROUP BY employee_id,shift_date");
+    data.evidenceImageCounts = Object.fromEntries(imageCounts.rows.map(row => [row.key, Number(row.count)]));
     data.calendarRemarks = (await c.query(
       `SELECT to_char(remark_date,'YYYY-MM-DD') AS date, employee_id AS "employeeId", remark AS text FROM calendar_remarks ORDER BY remark_date,employee_id`,
     )).rows;

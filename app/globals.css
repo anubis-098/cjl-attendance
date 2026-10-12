@@ -1,6 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap");
 @import "./manual-pairing.css";
 @import "./filter-visuals.css";
+@import "./employee-tools.css";
+@import "./evidence-viewer.css";
 :root {
   --ink: #203247;
   --muted: #687c90;
@@ -1555,7 +1557,7 @@ html[lang="en"] .account-email-field > label { grid-template-rows: 60px 44px; }
 }
 .month-shift-details > b,
 .month-shift-details
-  > span:not(.confirmed-check):not(.missing-check):not(.ot-investigate) {
+  > span:not(.confirmed-check):not(.missing-check):not(.ot-investigate):not(.evidence-marker) {
   max-width: 100%;
   overflow: hidden;
   white-space: nowrap;

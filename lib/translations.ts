@@ -1,5 +1,27 @@
 // UI copy only. Employee names, imported values and free-form notes are not translated.
 const entries = `
+ภาพหลักฐานเต็ม|Full evidence image
+ปิดภาพ|Close image
+เปิดภาพเต็ม|Open full image
+ย่อภาพ|Zoom out
+ซูมภาพ 2 เท่า|Zoom image 2x
+คลิกรูปเพื่อย่อ · เลื่อนเพื่อดูส่วนอื่น|Click to zoom out · Scroll to explore
+คลิกรูปเพื่อซูม 2 เท่า|Click image to zoom 2x
+โหลดรูปไม่สำเร็จ กรุณาปิดแล้วเปิดใหม่|Could not load image. Close and try again.
+มีรูปหลักฐานแนบ|Image evidence attached
+เพิ่มพนักงาน|Add employee
+บันทึกพนักงาน|Save employee
+เพิ่มพนักงานเรียบร้อยแล้ว|Employee added successfully
+เพิ่มพนักงานแล้ว กรุณารีเฟรชหน้าจอ|Employee added. Please refresh the page.
+ค่าเงินและเบี้ยเลี้ยงเริ่มต้น|Default pay and allowances
+เติมจากอัตราส่วนกลาง · OT per hrs. ×1.5 · OT Holiday ×3.0 · ปรับอัตราเงินได้ใน Monthly OT pay|Filled from global rates · OT per hrs. ×1.5 · OT Holiday ×3.0 · Configure rates in Monthly OT pay
+โหลดค่าเริ่มต้นใหม่|Reload defaults
+เลือกเวลาทำงาน หรือระบุเวลาเอง|Select a schedule or enter times below
+เลือกข้อมูล|Select a value
+ยังไม่มีตัวเลือก กรุณากรอกข้อมูล|No existing options. Enter a value.
+อัตโนมัติ|Automatic
+รหัสพนักงานนี้มีอยู่แล้ว|Employee ID already exists
+ข้อมูลหรืออัตราเงินเปลี่ยนแล้ว กรุณาโหลดค่าเริ่มต้นใหม่|Data or rates changed. Reload defaults before saving.
 Guest ดูเวลาเท่านั้น · Employee ดูเฉพาะตนเอง · ทั้งสองระดับไม่เห็นข้อมูลการเงิน|Guest views attendance; Employee views only their own records. Neither can view financial data.
 รหัสพนักงานที่ผูกบัญชี|Linked employee ID
 ดูข้อมูลเท่านั้น · ไม่มีสิทธิ์แก้ไขหรือดูข้อมูลการเงิน|Read only · No editing or financial access

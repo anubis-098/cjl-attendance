@@ -37,6 +37,7 @@ import {
   type ActualInterval,
 } from "@/lib/actual-timeline";
 import ActualCard, { ActualCalendarLegend } from "./actual-card";
+import EvidenceMarker from "./evidence-marker";
 const ReviewDrawer = dynamic(() => import("./review-drawer"));
 const ShiftEditor = dynamic(() => import("./shift-editor"));
 const ManualScanPairing = dynamic(() => import("./manual-scan-pairing"), { ssr: false });
@@ -694,6 +695,7 @@ export default function EmployeeCalendar({
                           `รายละเอียด ${e.shift.date} ${e.shift.shift_code}`,
                         )}
                       >
+                        <EvidenceMarker count={data.evidenceImageCounts?.[keyOf(e.shift)]}/>
                         {e.actual ? (
                           <ActualCard
                             actual={e.actual}

@@ -44,6 +44,7 @@ import { useCalendarClock } from "./use-calendar-clock";
 import { layoutShifts } from "@/lib/calendar-layout";
 import { dayCodeLabels } from "@/lib/day-codes";
 import ActualCard, { ActualCalendarLegend } from "./actual-card";
+import EvidenceMarker from "./evidence-marker";
 import {
   actualMatchesResult,
   actualCardStatus,
@@ -455,6 +456,7 @@ export default function AttendancePage() {
                                     open(s);
                                   }}
                                 >
+                                  <EvidenceMarker count={data.evidenceImageCounts?.[keyOf(s)]}/>
                                   {event.actual ? (
                                     <ActualCard
                                       actual={event.actual}

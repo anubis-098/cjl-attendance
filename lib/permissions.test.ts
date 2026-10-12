@@ -8,6 +8,7 @@ const data: Data = {
   reviews: {"A|2026-10-01":{approved:true,overBudget:false,note:""},"B|2026-10-01":{approved:false,overBudget:false,note:""}},
   audit:[{id:"secret",key:"B",actor:"admin",timestamp:"",reason:"",before:"salary",after:"salary"}],
   payrollSettings:{}, payrollBooks:{}, employeePayrollSettings:{},
+  evidenceImageCounts:{"A|2026-10-01":1,"B|2026-10-01":2},
   calendarRemarks:[{employeeId:"",date:"2026-10-01",text:"global"},{employeeId:"B",date:"2026-10-01",text:"private"}],
 };
 const workspace={data,employeeCount:2,revision:7,employees:[{employee_id:"A",source_data:{salary:357}},{employee_id:"B",source_data:{salary:900}}]};
@@ -25,6 +26,7 @@ test("employee scope comes from account and isolates scans, reviews, remarks and
   assert.deepEqual(result.data.punches.map(p=>p.device_emp_id),["DA"]);
   assert.deepEqual(Object.keys(result.data.reviews),["A|2026-10-01"]);
   assert.equal(result.data.calendarRemarks?.length,1);
+  assert.deepEqual(result.data.evidenceImageCounts,{"A|2026-10-01":1});
   assert.equal(visibleWorkspace(workspace,{role:"employee"}).employeeCount,0);
   assert.equal(visibleWorkspace(workspace,{role:"employee",employeeId:"unknown"}).data.punches.length,0);
   assert.equal(workspace.data.shifts.length,2);
