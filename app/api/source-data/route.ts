@@ -63,13 +63,14 @@ export async function GET(request: Request) {
       });
     }
     const args = [`%${search}%`];
+    const fingerprintPageSize = 10;
     const count = await fingerprintDB.query(
       "SELECT count(*) FROM (SELECT DISTINCT employee_id,punch_timestamp,punch_type FROM fingerprint_logs WHERE employee_id ILIKE $1) scans",
       args,
     );
     const rows = await fingerprintDB.query(
-      "SELECT employee_id,to_char(punch_timestamp,'YYYYMMDD') AS scan_date,to_char(punch_timestamp,'HH24MI') AS scan_time FROM (SELECT DISTINCT employee_id,punch_timestamp,punch_type FROM fingerprint_logs WHERE employee_id ILIKE $1) scans ORDER BY punch_timestamp,employee_id,punch_type LIMIT 25 OFFSET $2",
-      [...args, (page - 1) * 25],
+      "SELECT employee_id,to_char(punch_timestamp,'YYYYMMDD') AS scan_date,to_char(punch_timestamp,'HH24MI') AS scan_time FROM (SELECT DISTINCT employee_id,punch_timestamp,punch_type FROM fingerprint_logs WHERE employee_id ILIKE $1) scans ORDER BY punch_timestamp,employee_id,punch_type LIMIT $2 OFFSET $3",
+      [...args, fingerprintPageSize, (page - 1) * fingerprintPageSize],
     );
     return Response.json({
       rows: rows.rows,

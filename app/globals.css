@@ -3,6 +3,7 @@
 @import "./filter-visuals.css";
 @import "./employee-tools.css";
 @import "./evidence-viewer.css";
+@import "./upload-progress.css";
 :root {
   --ink: #203247;
   --muted: #687c90;

@@ -6,13 +6,15 @@ import { normalizeDepartment } from "@/lib/departments";
 import type { EmployeeRow } from "@/lib/master-data";
 import Link from "next/link";
 import { employeeCalendarHref } from "@/lib/employee-calendar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "./provider";
 import Pagination from "./pagination";
 import FingerprintServicePanel from "./fingerprint-service-panel";
 import type { FingerprintImportSummary } from "@/lib/fingerprint-import";
 import { FileUp, ChevronDown } from "lucide-react";
 import EmployeeCreateForm from "./employee-create-form";
+import UploadProgress from "./upload-progress";
+import { postFormWithProgress } from "@/lib/browser-upload";
 type ScanRow = { employee_id: string; scan_date: string; scan_time: string };
 export default function SourceDataPage({
   kind,
@@ -30,6 +32,9 @@ export default function SourceDataPage({
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [version, setVersion] = useState(0);
+  const [progress, setProgress] = useState<number | null>(null),
+    [lastFileName, setLastFileName] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null), uploadAbort = useRef<AbortController | null>(null);
   const master = kind === "employees";
   const [importResult, setImportResult] =
     useState<FingerprintImportSummary | null>(null);
@@ -80,19 +85,21 @@ export default function SourceDataPage({
       });
     return () => ctrl.abort();
   }, [kind, master, page, search, version, employeeFilters]);
-  async function upload() {
-    if (!file) return;
+  async function upload(selected: File) {
     setBusy(true);
     setError("");
     setImportResult(null);
+    setFile(selected); setLastFileName(selected.name); setProgress(0);
+    const controller = new AbortController(); uploadAbort.current = controller;
     try {
       const form = new FormData();
       form.set("mode", kind);
       if (master) form.set("employeeMode", employeeMode);
-      form.set(master ? "master" : "raw", file);
-      const r = await fetch("/api/import", { method: "POST", body: form });
-      const p = await r.json();
-      if (!r.ok) throw Error(p.error);
+      form.set(master ? "master" : "raw", selected);
+      const p = await postFormWithProgress("/api/import", form, setProgress, controller.signal) as {
+        fingerprintImport?: FingerprintImportSummary;
+        data: { shifts: { date: string }[] };
+      };
       setImportResult(p.fingerprintImport || null);
       await refresh();
       setFilters((prev) => ({
@@ -109,11 +116,20 @@ export default function SourceDataPage({
       setPage(1);
       setVersion((v) => v + 1);
       setToast("นำเข้าและบันทึกลงฐานข้อมูล SQL แล้ว");
+      setFile(null);
+      if (fileInput.current) fileInput.current.value = "";
     } catch (e) {
-      setError(e instanceof Error ? e.message : "นำเข้าไม่สำเร็จ");
+      if (!controller.signal.aborted)
+        setError(e instanceof Error ? e.message : "นำเข้าไม่สำเร็จ");
     } finally {
+      uploadAbort.current = null;
       setBusy(false);
     }
+  }
+  function discardSelectedFile() {
+    uploadAbort.current?.abort(); uploadAbort.current = null;
+    setFile(null); setProgress(null); setLastFileName("");
+    if (fileInput.current) fileInput.current.value = "";
   }
   return (
     <>
@@ -166,20 +182,15 @@ export default function SourceDataPage({
         </p>
         <input
           type="file"
+          ref={fileInput}
           aria-label={t(
             master ? "Import employee file" : "Import fingerprint file",
           )}
           accept={master ? ".xlsx,.xls,.csv" : ".txt"}
           disabled={busy}
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          onChange={(e) => { const selected = e.target.files?.[0]; setError(""); if (selected) void upload(selected); }}
         />
-        <button
-          className="button primary"
-          disabled={!file || busy}
-          onClick={upload}
-        >
-          {t(busy ? "กำลังนำเข้า..." : "นำเข้าไฟล์")}
-        </button>
+        {(file || lastFileName) && progress !== null && <UploadProgress fileName={lastFileName} progress={progress} busy={busy} onDiscard={discardSelectedFile} />}
         {error && (
           <p className="error" role="alert">
             {t(error)}
@@ -349,7 +360,7 @@ export default function SourceDataPage({
             )
           )}
         </div>
-        <Pagination page={page} total={total} onChange={setPage} />
+        <Pagination page={page} total={total} pageSize={master ? 25 : 10} onChange={setPage} />
       </section>
     </>
   );

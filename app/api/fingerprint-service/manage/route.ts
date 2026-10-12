@@ -6,7 +6,7 @@ export async function GET() {
   const denied=await guard(); if(denied) return denied;
   await ensureServiceSchema();
   const services=await employeeDB.query("SELECT id,name,active,created_at,last_seen,machine_name,version,(active AND last_seen>now()-interval '40 minutes') AS connected FROM fingerprint_services ORDER BY created_at DESC");
-  const uploads=await employeeDB.query("SELECT u.id,s.name,u.filename,u.received_at,u.summary FROM fingerprint_service_uploads u JOIN fingerprint_services s ON s.id=u.service_id ORDER BY u.received_at DESC LIMIT 30");
+  const uploads=await employeeDB.query("SELECT u.id,s.name,u.filename,u.received_at,u.summary FROM fingerprint_service_uploads u JOIN fingerprint_services s ON s.id=u.service_id ORDER BY u.received_at DESC LIMIT 3");
   return Response.json({services:services.rows,uploads:uploads.rows},{headers:{"Cache-Control":"no-store"}});
 }
 export async function POST(request:Request) {

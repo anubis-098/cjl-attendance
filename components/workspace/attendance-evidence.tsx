@@ -5,6 +5,8 @@ import { Paperclip, Download, Trash2 } from "lucide-react";
 import { useAccount } from "../auth-provider";
 import { useWorkspace } from "./provider";
 import EvidenceImageViewer from "./evidence-image-viewer";
+import UploadProgress from "./upload-progress";
+import { postFormWithProgress } from "@/lib/browser-upload";
 import {
   EVIDENCE_MAX_SIZE,
   type AttendanceEvidence,
@@ -29,8 +31,11 @@ export default function EvidencePanel({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const [file, setFile] = useState<File | null>(null),
-    [note, setNote] = useState("");
+    [note, setNote] = useState(""),
+    [progress, setProgress] = useState<number | null>(null),
+    [lastFileName, setLastFileName] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
+  const uploadAbort = useRef<AbortController | null>(null);
   const url = `/api/attendance-evidence?${new URLSearchParams({ employeeId, date })}`;
   useEffect(() => {
     const abort = new AbortController();
@@ -47,9 +52,9 @@ export default function EvidencePanel({
       });
     return () => abort.abort();
   }, [url]);
-  async function upload() {
-    if (!file || busy) return;
-    if (file.size === 0 || file.size > EVIDENCE_MAX_SIZE) {
+  async function upload(selected: File) {
+    if (busy) return;
+    if (selected.size === 0 || selected.size > EVIDENCE_MAX_SIZE) {
       setError("กรุณาเลือกไฟล์ขนาดไม่เกิน 5 MB");
       fileInput.current?.focus();
       return;
@@ -57,19 +62,19 @@ export default function EvidencePanel({
     setBusy(true);
     onBusy(true);
     setError("");
+    setFile(selected);
+    setLastFileName(selected.name);
+    setProgress(0);
+    const controller = new AbortController();
+    uploadAbort.current = controller;
     try {
       const form = new FormData();
       form.set("employeeId", employeeId);
       form.set("date", date);
       form.set("source", "supervisor");
       form.set("note", note);
-      form.set("file", file);
-      const r = await fetch("/api/attendance-evidence", {
-        method: "POST",
-        body: form,
-      });
-      const result = await r.json();
-      if (!r.ok) throw Error(result.error || "แนบหลักฐานไม่สำเร็จ");
+      form.set("file", selected);
+      await postFormWithProgress("/api/attendance-evidence", form, setProgress, controller.signal);
       setFile(null);
       setNote("");
       if (fileInput.current) fileInput.current.value = "";
@@ -81,11 +86,19 @@ export default function EvidencePanel({
       setItems((await list.json()).evidence);
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "แนบหลักฐานไม่สำเร็จ");
+      if (!controller.signal.aborted)
+        setError(e instanceof Error ? e.message : "แนบหลักฐานไม่สำเร็จ");
     } finally {
+      uploadAbort.current = null;
       setBusy(false);
       onBusy(false);
     }
+  }
+  function discardSelectedFile() {
+    uploadAbort.current?.abort();
+    uploadAbort.current = null;
+    setFile(null); setProgress(null); setLastFileName("");
+    if (fileInput.current) fileInput.current.value = "";
   }
   async function remove(id: string) {
     if (busy || account.role !== "super_admin") return;
@@ -183,9 +196,11 @@ export default function EvidencePanel({
               ref={fileInput}
               type="file"
               accept=".jpg,.jpeg,.png,.webp,.pdf"
+              disabled={busy}
               onChange={(e) => {
-                setFile(e.target.files?.[0] || null);
+                const selected = e.target.files?.[0];
                 setError("");
+                if (selected) void upload(selected);
               }}
             />
           </label>
@@ -194,14 +209,7 @@ export default function EvidencePanel({
               "JPG / PNG / WebP / PDF · ไม่เกิน 5 MB ต่อไฟล์ · สูงสุด 10 ไฟล์ต่อวันเริ่มกะ",
             )}
           </small>
-          <button
-            type="button"
-            className="button"
-            disabled={!file || busy}
-            onClick={upload}
-          >
-            {t(busy ? "กำลังแนบหลักฐาน..." : "แนบหลักฐาน")}
-          </button>
+          {(file || lastFileName) && progress !== null && <UploadProgress fileName={lastFileName} progress={progress} busy={busy} onDiscard={discardSelectedFile} />}
         </fieldset>
       </details>
       {error && (
