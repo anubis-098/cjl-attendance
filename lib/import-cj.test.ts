@@ -26,6 +26,7 @@ test("fingerprint TXT validates compact dates/times, retains IDs and deduplicate
 test("CJ clock fields accept Excel times and dotted or colon notation", () => {
   assert.equal(parseCJTime("7.00"), "07:00");
   assert.equal(parseCJTime("17:00"), "17:00");
+  assert.equal(parseCJTime("24.00"), "00:00");
   assert.equal(parseCJTime(0.25), "06:00");
   assert.equal(parseCJTime("25.00"), null);
 });
@@ -45,7 +46,6 @@ test("real example workbooks reconcile without inventing daily OT requests", asy
   assert.equal(report.data.punches.length, 8307);
   assert.ok(report.issues.some((i) => i.reason.includes("รอยืนยันโค้ด H")));
   assert.ok(report.issues.some((i) => i.reason.includes("First/Last Time")));
-  assert.ok(report.issues.some((i) => i.reason.includes("24.00")));
   for (const s of report.data.shifts) {
     assert.equal(s.requested_ot_known, nonWorkingCodes.has(s.shift_code));
     const r = reconcile(s, report.data.punches);

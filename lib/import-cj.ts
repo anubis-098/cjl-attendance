@@ -151,17 +151,6 @@ export async function importCJFiles(
       );
       continue;
     }
-    if (text(r[7]).startsWith("24")) {
-      blocked.add(id);
-      issue(
-        "Master Name",
-        i + 1,
-        id,
-        "",
-        "เวลาเริ่ม 24.00 ต้องยืนยันว่าเป็นวันเดียวกันหรือวันถัดไป",
-      );
-      continue;
-    }
     const employee = {
       emp_id: id,
       device_emp_id: id,

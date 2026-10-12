@@ -221,6 +221,32 @@ test("latest master workbook imports successfully", async () => {
   assert.equal(rows.find((row) => row.employee_id === "DF068273")?.shift_data?.shift_start, "06:00");
 });
 
+test("midnight represented as 24.00 produces an active overnight master shift", async () => {
+  const record: Record<string, string> = {
+    ลำดับ: "1",
+    รหัส: "NIGHT24",
+    "ชื่อ-นามสกุล": "Night worker",
+    แผนก: "Frozen",
+    "กะทำงาน": "N",
+    "เวลาทำงาน": "24.00-09.00",
+    "First Time": "24.00",
+    "Last Time": "09.00",
+    Sup: "Test",
+  };
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet([[...MASTER_HEADERS], MASTER_HEADERS.map((header) => record[header] || "")]),
+    "Master Name",
+  );
+  const [row] = await readEmployeeFile(
+    new File([XLSX.write(workbook, { type: "array", bookType: "xlsx" })], "midnight.xlsx"),
+  );
+  assert.equal(row.issue, "");
+  assert.equal(row.shift_data?.shift_start, "00:00");
+  assert.equal(row.shift_data?.shift_end, "09:00");
+});
+
 test("master headers accept reordered aliases, title rows and optional columns", async () => {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([

@@ -36,9 +36,7 @@ export async function readEmployeeFile(file: File): Promise<EmployeeRow[]> {
           !end ||
           (!!r[6] && (pair.length !== 2 || pair[0] !== start || pair[1] !== end))
         ? "เวลาทำงานไม่ตรง First Time / Last Time"
-        : String(r[7] || r[6]).startsWith("24")
-          ? "ต้องยืนยันวันอ้างอิงของ 24.00"
-          : "";
+        : "";
     const item: EmployeeRow = {
       employee_id: id,
       source_row: i + 1,
