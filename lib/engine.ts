@@ -96,7 +96,7 @@ export const holidayLabels: Record<string, string> = {
   OFF: "วันหยุด (โค้ดเดิม)",
   H: "วันหยุดประจำสัปดาห์",
   H8: "วันหยุดประจำสัปดาห์แต่มาทำงาน",
-  PH: "วันหยุดประจำปี",
+  PH: "วันหยุดองค์กร",
   PH8: "มาทำงานวันประเพณี",
 };
 // Company policy: the first eight credited hours earn x2 on weekly holidays,

@@ -250,7 +250,22 @@ export default function AttendancePage() {
           </div>
           <ViewMode model={model} />
         </div>
-        <Filters model={model} showView={false}>
+        <Filters
+          model={model}
+          showView={false}
+          onClearFilters={() => {
+            model.setFilters({
+              date: today,
+              view: "week",
+              search: "",
+              agency: "all",
+              department: "all",
+              workerType: "all",
+              shift: "all",
+            });
+            setStatus("all");
+          }}
+        >
           <StatusFilter value={status} onChange={setStatus} />
           <button
             className="button approve"

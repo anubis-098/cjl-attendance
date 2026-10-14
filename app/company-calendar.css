@@ -1,0 +1,21 @@
+.company-calendar-editor { border: 0; padding: 0; margin: 0; min-width: 0; }
+.company-calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; }
+.company-calendar-toolbar input { padding: 7px; border: 1px solid var(--line); border-radius: 6px; }
+.company-calendar-period-field { display:flex; align-items:center; gap:6px; font-size:13px; }
+.company-calendar-period-field select { padding:7px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
+.company-calendar-months { display: grid; gap: 16px; max-width: 560px; }
+.company-calendar-months.year-view { max-width: none; gap:10px; align-items:start; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.company-calendar-month { border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; }
+.company-calendar-month h3 { margin: 0 0 10px; font-size: 15px; }
+.company-calendar-month .company-holiday-cell { min-height: 44px; padding: 4px; }
+.company-calendar-month .company-holiday-cell[aria-pressed="true"],
+button.company-holiday-cell[aria-pressed="true"],
+.holiday-key.company-holiday-solid,
+.month-day.company-holiday-solid { background: #e7eaee; color: #465362; border-color: #bdc5ce; }
+.company-calendar-month .company-holiday-cell[data-pending="true"] { box-shadow: inset 0 0 0 2px #0080c6; }
+.year-view .company-calendar-month { padding:8px; }
+.year-view .company-calendar-month h3 { font-size:14px; margin:0 0 5px; }
+.year-view .company-holiday-grid { gap:3px; }
+.year-view .company-holiday-grid > b { padding:2px 0; font-size:11px; }
+.year-view .company-holiday-cell { min-height:32px; height:32px; padding:1px; border-radius:5px; font-size:12px; line-height:1.1; }
+.year-view .company-holiday-cell small { min-height:9px; height:9px; font-size:8px; line-height:9px; }

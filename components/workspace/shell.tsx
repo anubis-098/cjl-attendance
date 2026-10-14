@@ -5,7 +5,6 @@ import {
   Banknote,
   CalendarDays,
   Check,
-  ChevronDown,
   History,
   Settings2,
   ShieldCheck,
@@ -20,6 +19,7 @@ import { useAccount } from "../auth-provider";
 import LanguageSwitcher from "../language-switcher";
 import { canManageAttendance, roleLabels } from "@/lib/permissions";
 import ReadOnlyWorkspace from "./read-only-workspace";
+import WorkspaceSelector from "./workspace-selector";
 export default function Shell({ children }: { children: ReactNode }) {
   const { t, getLocale } = useTranslation();
   const { toast, setToast } = useWorkspace();
@@ -54,24 +54,15 @@ export default function Shell({ children }: { children: ReactNode }) {
           {t("CJ Agent")}
           <span className="brand-dot">{t(".")}</span>
         </Link>
-        <div className="workspace">
-          <span className="workspace-icon">
-            <Building2 size={19} />
-          </span>
-          <div>
-            <b>{t("Agency Workspace")}</b>
-            <small>{t("Operations management")}</small>
-          </div>
-          <ChevronDown size={14} />
-        </div>
+        <WorkspaceSelector />
         <div className="nav-label">{t("WORKSPACE")}</div>
         {[
           ["/attendance", "ภาพรวมเวลาทำงาน", CalendarDays],
           ["/employees", "ข้อมูลพนักงาน", Building2],
-          ["/fingerprints", "เวลาสแกนนิ้ว", History],
           ["/approvals", "รายการรออนุมัติ", ShieldCheck],
           ["/payroll", "คำนวณเงินโอที", Banknote],
           ["/audit-log", "ประวัติการตรวจสอบ", History],
+          ["/fingerprints", "เวลาสแกนนิ้ว", History],
         ].filter(([href]) => canManageAttendance(account.role) || href === "/attendance").map(([href, label, Icon]) => {
           const Component = Icon as typeof CalendarDays;
           const active =

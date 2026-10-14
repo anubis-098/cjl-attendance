@@ -1,6 +1,6 @@
 export const dayCodeLabels: Record<string, string> = {
   "1": "Work · วันทำงานปกติ",
-  PH: "Public Holiday · วันหยุดประจำปี",
+  PH: "Public Holiday · วันหยุดองค์กร",
   PH8: "มาทำงานวันประเพณี",
   H: "Holiday · วันหยุดประจำสัปดาห์",
   H8: "วันหยุดประจำสัปดาห์แต่มาทำงาน",

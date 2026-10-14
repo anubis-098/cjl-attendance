@@ -36,10 +36,13 @@ export default function ShiftEditor({
   const [reason, setReason] = useState("");
   const presets = [
     ...new Set(
-      shifts.map(
-        (s) =>
-          `${s.base_shift_code || s.shift_code}|${s.shift_start}|${s.shift_end}`,
-      ),
+      [
+        "A|16:00|01:00",
+        ...shifts.map(
+          (s) =>
+            `${s.base_shift_code || s.shift_code}|${s.shift_start}|${s.shift_end}`,
+        ),
+      ],
     ),
   ]
     .filter((s) => /^[MDAN]\|/.test(s))

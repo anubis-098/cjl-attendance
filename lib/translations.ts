@@ -717,7 +717,7 @@ OT ยืนยันแล้ว / ทำจริง|Confirmed / actual OT
 ยืนยันรหัสผ่านใหม่|Confirm new password
 กำลังโหลดหน้า...|Loading page...
 Work · วันทำงานปกติ|Work · Regular workday
-Public Holiday · วันหยุดประจำปี|Public holiday
+Public Holiday · วันหยุดองค์กร|Organization holiday
 มาทำงานวันประเพณี|Worked on a public holiday
 Holiday · วันหยุดประจำสัปดาห์|Holiday · Weekly rest day
 วันหยุดประจำสัปดาห์แต่มาทำงาน|Worked on a weekly rest day
@@ -738,7 +738,7 @@ Resign · ลาออก|Resigned
 สถานะ (Status)|Status
 วันหยุด (โค้ดเดิม)|Holiday (legacy code)
 วันหยุดประจำสัปดาห์|Weekly rest day
-วันหยุดประจำปี|Public holiday
+วันหยุดองค์กร|Organization holiday
 ระบบ|System
 สำเร็จ|Completed
 OT ต่ำกว่าที่ขอ|OT below requested hours

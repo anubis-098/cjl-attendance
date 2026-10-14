@@ -26,6 +26,7 @@ export type Filters = {
   workerType: string;
   shift: string;
 };
+export type WorkspaceScope = { workspace: "agency" | "hr"; site: "CDC" | "HDC" };
 const defaults: Filters = {
   date: isoLocal(Date.now()).slice(0, 10),
   view: "week",
@@ -43,6 +44,8 @@ const empty: Data = {
   audit: [],
 };
 type Workspace = {
+  workspaceScope: WorkspaceScope;
+  setWorkspaceScope: Dispatch<SetStateAction<WorkspaceScope>>;
   saveScanPairs: (employeeId: string, pairs: ScanPair[]) => Promise<boolean>;
   saveShifts: (
     employeeId: string,
@@ -68,6 +71,7 @@ type Workspace = {
 };
 const Context = createContext<Workspace | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  const [workspaceScope, setWorkspaceScope] = useState<WorkspaceScope>({ workspace: "agency", site: "CDC" });
   const { t, getLocale } = useTranslation();
   const [data, replaceData] = useState<Data>(empty),
     [employeeCount, setEmployeeCount] = useState(0),
@@ -280,6 +284,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [apply]);
   const value = useMemo(
     () => ({
+      workspaceScope,
+      setWorkspaceScope,
       data,
       setData,
       refresh,
@@ -295,6 +301,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       saveScanPairs,
     }),
     [
+      workspaceScope,
       data,
       setData,
       refresh,

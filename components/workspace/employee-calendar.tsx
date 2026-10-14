@@ -593,7 +593,7 @@ export default function EmployeeCalendar({
                       <div
                         key={date}
                         data-calendar-date={date}
-                        className={`month-day ${holiday ? "holiday-striped" : ""} ${!date.startsWith(month) ? "outside-month" : ""} ${(holidayMode || shiftMode) && holidayDates.includes(date) ? "holiday-selected" : ""}`}
+                        className={`month-day ${holiday ? (code === "PH" || code === "PH8" ? "company-holiday-solid" : "holiday-striped") : ""} ${!date.startsWith(month) ? "outside-month" : ""} ${(holidayMode || shiftMode) && holidayDates.includes(date) ? "holiday-selected" : ""}`}
                         style={{ gridColumn: i + 1, gridRow: "1 / -1" }}
                       >
                         <span className="month-date">
@@ -783,9 +783,9 @@ export default function EmployeeCalendar({
         </div>
         <p className="month-summary">
           <span className="holiday-key holiday-striped" />
-          {t(
-            " วันหยุดตามรหัส H / H8 / PH / PH8 ในตารางกะ · 1 ช่อง = 24 ชั่วโมง · คลิกแถบกะเพื่อดูรายละเอียด",
-          )}
+          H / H8 · {t("วันหยุดประจำสัปดาห์")}
+          <span className="holiday-key company-holiday-solid" />
+          PH / PH8 · {t("วันหยุดองค์กร")}
         </p>
         </>}
       </section>

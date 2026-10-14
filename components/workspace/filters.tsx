@@ -2,7 +2,7 @@
 import { useTranslation } from "@/lib/i18n";
 import { holidayLabels, isoLocal } from "@/lib/engine";
 import { addDays } from "@/lib/workspace";
-import { ArrowLeft, ArrowRight, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCcw, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import type { AttendanceData } from "./use-attendance";
 import { dayCodeLabels } from "@/lib/day-codes";
@@ -32,10 +32,12 @@ export default function Filters({
   model,
   children,
   showView = true,
+  onClearFilters,
 }: {
   model: AttendanceData;
   children?: ReactNode;
   showView?: boolean;
+  onClearFilters?: () => void;
 }) {
   const { t, getLocale } = useTranslation();
   const { data, filters, setFilters, start, count, days } = model;
@@ -113,6 +115,12 @@ export default function Filters({
           >
             {t("วันนี้")}
           </button>
+          {onClearFilters && (
+            <button className="button clear-filters" onClick={onClearFilters}>
+              <RotateCcw size={14} />
+              {t("ล้างตัวกรอง")}
+            </button>
+          )}
         </div>
         <span className="timezone">{t("Asia/Bangkok (GMT+7)")}</span>
       </div>

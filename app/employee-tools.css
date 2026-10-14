@@ -15,3 +15,4 @@
 .employee-money-heading span,.employee-form-hint { color:#6c7e8f; font-size:12px; }
 .employee-form-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; flex-wrap:wrap; }
 .employee-tool-body .source-import { padding:0; margin:0; }
+.employee-filter-reset { margin-left:auto; flex-shrink:0; width:36px; height:36px; padding:0; justify-content:center; }

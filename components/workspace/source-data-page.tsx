@@ -11,8 +11,9 @@ import { useWorkspace } from "./provider";
 import Pagination from "./pagination";
 import FingerprintServicePanel from "./fingerprint-service-panel";
 import type { FingerprintImportSummary } from "@/lib/fingerprint-import";
-import { FileUp, ChevronDown } from "lucide-react";
+import { FileUp, ChevronDown, RotateCcw } from "lucide-react";
 import EmployeeCreateForm from "./employee-create-form";
+import CompanyHolidayPanel from "./company-holiday-panel";
 import UploadProgress from "./upload-progress";
 import { postFormWithProgress } from "@/lib/browser-upload";
 type ScanRow = { employee_id: string; scan_date: string; scan_time: string };
@@ -198,6 +199,7 @@ export default function SourceDataPage({
         )}
       </section></div></details>
       {master && <EmployeeCreateForm onCreated={() => {setPage(1);setSearch("");setEmployeeFilters({});setVersion(v=>v+1);}} />}
+      {master && <CompanyHolidayPanel />}
       {!master && importResult && (
         <section className="panel" role="status" style={{ padding: 20 }}>
           <h2>
@@ -269,23 +271,28 @@ export default function SourceDataPage({
                   <option value="issue">{t("มีปัญหาข้อมูล")}</option>
                 </select>
               </label>
-              <button
-                className="button"
-                disabled={!search && !Object.keys(employeeFilters).length}
-                onClick={() => {
-                  setSearch("");
-                  setEmployeeFilters({});
-                  setPage(1);
-                }}
-              >
-                {t("ล้างตัวกรอง")}
-              </button>
             </>
           )}
           <span>
             {t(total.toLocaleString())}
             {t(" รายการ")}
           </span>
+          {master && (
+            <button
+              type="button"
+              className="button employee-filter-reset"
+              aria-label={t("ล้างตัวกรอง")}
+              title={t("ล้างตัวกรอง")}
+              disabled={!search && !Object.keys(employeeFilters).length}
+              onClick={() => {
+                setSearch("");
+                setEmployeeFilters({});
+                setPage(1);
+              }}
+            >
+              <RotateCcw size={17} aria-hidden="true" />
+            </button>
+          )}
         </div>
         <div className="report-scroll">
           <table className="report-table">
