@@ -1,5 +1,5 @@
 import { OT_RATES } from "./engine";
-import { leaveCodes, dayCodeLabels } from "./day-codes";
+import { leaveCodes } from "./day-codes";
 import type { calculatePayroll } from "./payroll";
 
 export type PayrollReport = ReturnType<typeof calculatePayroll>;
@@ -79,54 +79,54 @@ export function buildPayrollExport(
   totals: boolean,
 ) {
   const columns: Column[] = [
-    { label: "ลำดับ", value: (_, i) => i + 1 },
-    { label: "รหัสพนักงาน", value: (r) => r.id },
-    { label: "ชื่อ-นามสกุล", value: (r) => r.name },
+    { label: "No.", value: (_, i) => i + 1 },
+    { label: "Employee ID", value: (r) => r.id },
+    { label: "Employee Name", value: (r) => r.name },
     { label: "Agency", value: (r) => r.agency },
-    { label: "แผนก", value: (r) => r.department },
-    { label: "เริ่มรอบ", value: () => report.period.from },
-    { label: "สิ้นสุดรอบ", value: () => report.period.to },
+    { label: "Department", value: (r) => r.department },
+    { label: "Period Start", value: () => report.period.from },
+    { label: "Period End", value: () => report.period.to },
   ];
   const add = (label: string, value: Column["value"], sum = true) =>
     columns.push({ label, value, sum, numeric: true });
   if (selected.includes("rates")) {
     add(
-      "ค่าจ้างฐานรายวัน (บาท)",
+      "Base Daily Wage (THB/day)",
       (r) => r.rate?.baseDailyWage ?? r.rate?.dailyWage ?? null,
       false,
     );
     add(
-      "Service ค่าแรง (%)",
+      "Wage Service (%)",
       (r) => r.rate?.wageServicePercent ?? r.rate?.servicePercent ?? 0,
       false,
     );
-    add("Service OT (%)", (r) => r.rate?.servicePercent ?? 0, false);
-    add("ค่าจ้างรายวัน (บาท)", (r) => r.rate?.dailyWage ?? null, false);
+    add("OT Service (%)", (r) => r.rate?.servicePercent ?? 0, false);
+    add("Daily Wage incl. Service (THB/day)", (r) => r.rate?.dailyWage ?? null, false);
     for (const rate of OT_RATES)
       add(
-        `อัตรา OT x${rate} (บาท/ชม.)`,
+        `OT Rate x${rate} (THB/hour)`,
         (r) => r.rate?.rates[rate] ?? null,
         false,
       );
   }
   for (const status of ["approved", "pending"] as const) {
-    const label = status === "approved" ? "ยืนยันแล้ว" : "รอยืนยัน";
+    const label = status === "approved" ? "Approved" : "Pending Approval";
     if (selected.includes(`${status}Hours`)) {
       for (const rate of OT_RATES)
-        add(`OT ${label} x${rate} (ชม.)`, (r) => r[`${status}Hours`][rate]);
-      add(`รวม OT ${label} (ชม.)`, (r) =>
+        add(`${label} OT x${rate} (hours)`, (r) => r[`${status}Hours`][rate]);
+      add(`Total ${label} OT (hours)`, (r) =>
         OT_RATES.reduce((n, rate) => n + r[`${status}Hours`][rate], 0),
       );
     }
     if (selected.includes(`${status}Money`)) {
       for (const rate of OT_RATES)
         add(
-          `เงิน OT ${label} x${rate} (บาท)`,
+          `${label} OT x${rate} Amount (THB)`,
           (r) => r[`${status}Amounts`][rate],
         );
-      add(`รวมเงิน OT ${label} (บาท)`, (r) => r[`${status}Total`]);
+      add(`Total ${label} OT Amount (THB)`, (r) => r[`${status}Total`]);
       add(
-        `Service รวมอยู่ในเงิน OT ${label} (บาท)`,
+        `${label} OT Service Amount (THB)`,
         (r) => r[`${status}ServiceTotal`],
       );
     }
@@ -142,23 +142,23 @@ export function buildPayrollExport(
             .map((day) => day.departmentAllowance),
         );
       add(
-        `เบี้ยเลี้ยงแผนก${label} (บาท)`,
+        `${label} Department Allowance (THB)`,
         (r) => r[`${status}Allowances`].department,
       );
-      add(`ค่า Seafood${label} (บาท)`, (r) =>
+      add(`${label} Seafood Allowance (THB)`, (r) =>
         sumDepartmentAllowance(r, "seafood"),
       );
-      add(`ค่าความเย็น Frozen${label} (บาท)`, (r) =>
+      add(`${label} Frozen Allowance (THB)`, (r) =>
         sumDepartmentAllowance(r, "frozen"),
       );
-      add(`ค่ากะ${label} (บาท)`, (r) => r[`${status}Allowances`].shift);
+      add(`${label} Shift Allowance (THB)`, (r) => r[`${status}Allowances`].shift);
       add(
-        `รวมเบี้ยเลี้ยงและค่ากะ${label} (บาท)`,
+        `Total ${label} Allowances (THB)`,
         (r) => r[`${status}AllowanceTotal`],
       );
     }
     if (selected.includes(`${status}Grand`))
-      add(`เงินรวม${label} (OT + เบี้ยเลี้ยง + ค่ากะ) (บาท)`, (r) =>
+      add(`${label} Total Income (THB)`, (r) =>
         r[`${status}Total`] == null
           ? null
           : r[`${status}Total`]! + r[`${status}AllowanceTotal`],
@@ -166,7 +166,7 @@ export function buildPayrollExport(
   }
   if (selected.includes("notes")) {
     columns.push({
-      label: "วันหยุด (รหัส: จำนวนวัน)",
+      label: "Holidays (code: days)",
       value: (r) =>
         Object.entries(r.holidays)
           .filter(([code]) => !leaveCodes.some((leave) => leave === code))
@@ -174,69 +174,75 @@ export function buildPayrollExport(
           .map(([code, n]) => `${code}: ${n}`)
           .join("; "),
     });
-    add("สแกนไม่ครบ (กะ)", (r) => r.missing);
+    add("Incomplete Scan Shifts", (r) => r.missing);
     columns.push({
-      label: "หมายเหตุ",
+      label: "Notes",
       value: (r) => r.rate?.warnings.join("; ") || "",
     });
   }
   if (selected.includes("leave")) {
+    const leaveNames: Record<string, string> = {
+      WOP: "Leave without pay",
+      PL: "Personal business leave",
+      SL: "Sick leave",
+      AB: "Absent",
+    };
     for (const code of leaveCodes)
       add(
-        `${code} · ${dayCodeLabels[code]} (วัน)`,
+        `${code} ${leaveNames[code] || code} (days)`,
         (r) => r.holidays[code] || 0,
       );
-    add("รวมวันลาและขาดงาน (วัน)", (r) =>
+    add("Total Leave and Absence (days)", (r) =>
       leaveCodes.reduce((n, code) => n + (r.holidays[code] || 0), 0),
     );
   }
   if (selected.includes("publicHolidays")) {
-    add("PH วันหยุดประเพณี (วัน)", (r) => r.holidays.PH || 0);
-    add("PH8 มาทำงานวันประเพณี (วัน)", (r) => r.holidays.PH8 || 0);
+    add("PH Public Holidays (days)", (r) => r.holidays.PH || 0);
+    add("PH8 Worked Public Holidays (days)", (r) => r.holidays.PH8 || 0);
     add(
-      "รวมวันหยุดประเพณี (วัน)",
+      "Total Public Holidays (days)",
       (r) => (r.holidays.PH || 0) + (r.holidays.PH8 || 0),
     );
   }
   if (selected.includes("salary")) {
-    add("วันทำงานจริง ไม่รวมวันหยุด (วัน)", (r) => r.workedDays);
+    add("Worked Days (excluding holidays)", (r) => r.workedDays);
     add(
-      "ฐานค่าจ้างรายวัน (บาท/วัน)",
+      "Base Daily Wage (THB/day)",
       (r) => r.rate?.baseDailyWage ?? r.rate?.dailyWage ?? null,
       false,
     );
     add(
-      "Service ค่าจ้าง (%)",
+      "Wage Service (%)",
       (r) => r.rate?.wageServicePercent ?? r.rate?.servicePercent ?? 0,
       false,
     );
     add(
-      "ค่าจ้างรายวันรวม Service (บาท/วัน)",
+      "Daily Wage incl. Service (THB/day)",
       (r) => r.rate?.dailyWage ?? null,
       false,
     );
-    add("ค่าจ้างตามวันทำงานจริง (บาท)", (r) => r.dailyWageTotal);
+    add("Wages for Actual Workdays (THB)", (r) => r.dailyWageTotal);
     add(
-      "Service รวมอยู่ในค่าจ้างวันทำงานจริง (บาท)",
+      "Wage Service Amount (THB)",
       (r) => r.wageServiceTotal,
     );
-    add("วันหยุดนักขัตฤกษ์ที่จ่ายค่าจ้าง (วัน)", (r) => r.publicHolidayDays);
-    add("ค่าวันหยุดนักขัตฤกษ์ (บาท)", (r) => r.publicHolidayWage);
-    add("วันหยุดประจำสัปดาห์ที่มาทำงาน (วัน)", (r) => r.weeklyWorkedDays);
+    add("Paid Public Holidays (days)", (r) => r.publicHolidayDays);
+    add("Public Holiday Wages (THB)", (r) => r.publicHolidayWage);
+    add("Weekly Holidays Worked (days)", (r) => r.weeklyWorkedDays);
     add(
-      "OT วันหยุดประจำสัปดาห์ยืนยันแล้ว รวมอยู่ในยอด OT (บาท)",
+      "Approved Weekly Holiday OT (included in OT total) (THB)",
       (r) => r.weeklyApprovedOTTotal,
     );
-    add("รวมค่าจ้างวันหยุด (บาท)", (r) => r.holidayWageTotal);
+    add("Total Holiday Wages (THB)", (r) => r.holidayWageTotal);
     add(
-      "รวมค่าจ้าง + OT และเบี้ยเลี้ยงยืนยันแล้ว (บาท)",
+      "Wages + Approved OT + Allowances (THB)",
       (r) => r.salaryWithApprovedOT,
     );
-    add("ยอดประมาณการ รวมรายการรอยืนยัน (บาท)", (r) => r.projectedSalary);
+    add("Projected Total incl. Pending Items (THB)", (r) => r.projectedSalary);
   }
   const format = (value: string | number | null, numeric?: boolean) =>
     value === null
-      ? "อัตราไม่ครบ"
+      ? "RATE INCOMPLETE"
       : numeric && typeof value === "number"
         ? value.toFixed(2)
         : String(value);
@@ -248,9 +254,9 @@ export function buildPayrollExport(
   if (totals)
     result.push(
       columns.map((c, i) => {
-        if (i === 0) return "รวมทั้งหมด";
+        if (i === 0) return "GRAND TOTAL";
         if (!c.sum) return "";
-        if (records.some((r) => r[i] === null)) return "อัตราไม่ครบ";
+        if (records.some((r) => r[i] === null)) return "RATE INCOMPLETE";
         return format(
           records.reduce((n, r) => n + Number(r[i]), 0),
           true,

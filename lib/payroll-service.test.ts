@@ -30,11 +30,11 @@ test("Service is applied once to base wages and OT, with fixed allowances and lo
   assert.equal(local.salaryWithApprovedOT, 714.1);
   assert.equal(JSON.stringify(data), snapshot);
   const csv = buildPayrollExport(report, ["salary", "rates", "approvedMoney", "pendingMoney"], true);
-  const row = csv.find(row => row[csv[0].indexOf("รหัสพนักงาน")] === "GLOBAL")!;
-  assert.equal(row[csv[0].indexOf("ฐานค่าจ้างรายวัน (บาท/วัน)")], "357.00");
-  assert.equal(row[csv[0].indexOf("Service OT (%)")], "8.00");
-  assert.equal(row[csv[0].indexOf("รวมเงิน OT รอยืนยัน (บาท)")], "144.58");
-  assert.equal(row[csv[0].indexOf("ยอดประมาณการ รวมรายการรอยืนยัน (บาท)")], "645.08");
+  const row = csv.find(row => row[csv[0].indexOf("Employee ID")] === "GLOBAL")!;
+  assert.equal(row[csv[0].indexOf("Base Daily Wage (THB/day)")], "357.00");
+  assert.equal(row[csv[0].indexOf("OT Service (%)")], "8.00");
+  assert.equal(row[csv[0].indexOf("Total Pending Approval OT Amount (THB)")], "144.58");
+  assert.equal(row[csv[0].indexOf("Projected Total incl. Pending Items (THB)")], "645.08");
 });
 
 test("rates round to satang before hours, and Service can be changed or disabled", () => {

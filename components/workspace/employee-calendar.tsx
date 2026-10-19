@@ -3,6 +3,7 @@ import { useTranslation } from "@/lib/i18n";
 import { editableDayCodes, leaveCodes, dayCodeLabels } from "@/lib/day-codes";
 import { Check } from "lucide-react";
 import EmployeePayrollSettings from "./employee-payroll-settings";
+import EmployeeProfileCard from "./employee-profile-card";
 import { useAccount } from "../auth-provider";
 import { canManageAttendance } from "@/lib/permissions";
 import Link from "next/link";
@@ -240,7 +241,7 @@ export default function EmployeeCalendar({
         <CompanyHolidayModal month={month} onClose={closeCompany} />
       )}
       {t(preview.popup)}
-      <div className="page-heading">
+      <div className="page-heading employee-calendar-heading">
         <div>
           <Link href="/attendance" className="employee-calendar-link">
             {t("← กลับตารางเวลาพนักงาน")}
@@ -265,6 +266,7 @@ export default function EmployeeCalendar({
           )}
         </div>
       </div>
+      <EmployeeProfileCard employeeId={employeeId} fallbackName={employee?.emp_name || name || employeeId} />
       <section
         className={`panel employee-month-panel ${requestOpen ? "request-mode" : ""}`}
       >

@@ -217,7 +217,7 @@ test("OT credits actual hours and requires confirmation without a request", () =
     assert.equal(r.actualOT, 3);
     assert.equal(r.punchedOT, 3);
     assert.equal(r.status, "UNAPPROVED");
-    assert.equal(r.highOT, true);
+    assert.equal(r.highOT, false);
     assert.equal(canApprove(r), true);
     const confirmed = reconcile(s, p, {
       approved: true,
@@ -533,31 +533,31 @@ test("bulk confirmation accepts actual OT but rejects missing scans", () => {
   assert.deepEqual(missing.reviews, {});
   assert.equal(missing.audit.length, 0);
 });
-test("high OT begins at exactly three actual x1.5 hours even within the request", () => {
-  const s = { ...shift, requested_ot_hrs: 4 };
+test("high OT begins at exactly five actual x1.5 hours even within the request", () => {
+  const s = { ...shift, requested_ot_hrs: 6 };
   const below = reconcile(
     s,
-    punches("2026-09-14 08:00:00", "2026-09-14 19:59:00"),
+    punches("2026-09-14 08:00:00", "2026-09-14 21:59:00"),
   );
   assert.equal(below.highOT, false);
   assert.equal(canApprove(below), true);
   const at = reconcile(
     s,
-    punches("2026-09-14 08:00:00", "2026-09-14 20:00:00"),
+    punches("2026-09-14 08:00:00", "2026-09-14 22:00:00"),
   );
   assert.equal(at.highOT, true);
   assert.equal(at.status, "UNAPPROVED");
   assert.equal(at.exceedsTarget, false);
-  assert.equal(at.monitoredOT, 3);
+  assert.equal(at.monitoredOT, 5);
   assert.equal(canApprove(at), true);
   const oldApproval = reconcile(
     s,
-    punches("2026-09-14 08:00:00", "2026-09-14 20:00:00"),
+    punches("2026-09-14 08:00:00", "2026-09-14 22:00:00"),
     { approved: true, overBudget: false, note: "General approval" },
   );
   assert.equal(oldApproval.approved, true);
 });
-test("holiday x1 hours do not count toward the three-hour high-OT threshold", () => {
+test("holiday x1 hours do not count toward the five-hour high-OT threshold", () => {
   const s = { ...shift, shift_code: "OFF-H", requested_ot_hrs: 12 };
   const below = reconcile(
     s,
@@ -568,13 +568,13 @@ test("holiday x1 hours do not count toward the three-hour high-OT threshold", ()
   assert.equal(canApprove(below), true);
   const at = reconcile(
     s,
-    punches("2026-09-14 08:00:00", "2026-09-14 20:00:00"),
+    punches("2026-09-14 08:00:00", "2026-09-14 22:00:00"),
   );
-  assert.equal(at.monitoredOT, 3);
-  assert.equal(at.rawOT["3.0"], 3);
+  assert.equal(at.monitoredOT, 5);
+  assert.equal(at.rawOT["3.0"], 5);
   assert.equal(at.highOT, true);
   assert.equal(at.status, "UNAPPROVED");
-  assert.equal(at.punchedOT, 11);
+  assert.equal(at.punchedOT, 13);
   assert.equal(canApprove(at), true);
 });
 test("outside matching window and other employee punches are excluded", () => {
@@ -667,14 +667,14 @@ test("missing daily OT request does not block confirmation", () => {
   assert.equal(r.exceedsTarget, false);
 });
 
-test("high overtime stays pending until explicitly confirmed", () => {
-  for (const hours of [3, 4]) {
+test("overtime stays pending, with high-OT flag starting at five hours", () => {
+  for (const [hours, high] of [[3, false], [4, false], [5, true]] as const) {
     const r = reconcile(
       { ...shift, requested_ot_hrs: hours },
       punches("2026-09-14 08:00:00", `2026-09-14 ${17 + hours}:00:00`),
     );
     assert.equal(r.status, "UNAPPROVED");
-    assert.equal(r.highOT, true);
+    assert.equal(r.highOT, high);
     assert.equal(r.requiresOvertimeApproval, true);
     assert.equal(canApprove(r), true);
     assert.equal(r.approved, false);
@@ -709,7 +709,7 @@ test("detailed filters find overlapping late and overtime approval conditions", 
   assert.equal(matchesStatus(lateSuccess, "MISSING"), false);
   const highPending = reconcile(
     shift,
-    punches("2026-09-14 08:00:00", "2026-09-14 20:00:00"),
+    punches("2026-09-14 08:00:00", "2026-09-14 22:00:00"),
   );
   assert.equal(highPending.status, "UNAPPROVED");
   assert.equal(matchesStatus(highPending, "UNAPPROVED"), true);

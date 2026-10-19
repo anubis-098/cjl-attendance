@@ -49,6 +49,10 @@ export async function PUT(request: Request) {
       const prior = current.data.reviews[key];
       if (review.manualPair && (!prior?.manualPair || review.inTime !== prior.inTime || review.outTime !== prior.outTime))
         delete review.manualPair;
+      if (JSON.stringify(review.ignoredScans) !== JSON.stringify(prior?.ignoredScans)) {
+        if (prior?.ignoredScans) review.ignoredScans = prior.ignoredScans;
+        else delete review.ignoredScans;
+      }
       const s = shifts.get(key);
       if (!s) throw Error("ไม่พบกะที่ต้องการตรวจสอบ");
       if (
@@ -58,6 +62,8 @@ export async function PUT(request: Request) {
           !Number.isInteger(review.otRulesVersion)) ||
         (review.deductOTBreak !== undefined &&
           typeof review.deductOTBreak !== "boolean") ||
+        (review.ignoredScans !== undefined && (!Array.isArray(review.ignoredScans) ||
+          review.ignoredScans.some(ms => !Number.isSafeInteger(ms)))) ||
         typeof review.note !== "string"
       )
         throw Error("ผลตรวจสอบไม่ถูกต้อง");

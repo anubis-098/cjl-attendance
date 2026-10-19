@@ -29,6 +29,7 @@ export type Punch = {
 };
 export type Review = {
   manualPair?: boolean;
+  ignoredScans?: number[];
   otRulesVersion?: number;
   deductOTBreak?: boolean;
   inTime?: string;
@@ -155,12 +156,14 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
   const code = normalizeDayCode(s.shift_code);
   const nonWorking = nonWorkingCodes.has(code);
   const { start, end, from, to } = shiftWindow(s, s.date);
+  const ignoredScans = new Set(review?.ignoredScans || []);
   const allLogs = punches
     .filter((p) => p.device_emp_id === s.device_emp_id)
     .map((p) => ({
       ...p,
       ms: punchTime(p.punch_timestamp),
     }))
+    .filter((p) => !ignoredScans.has(p.ms))
     .sort((a, b) => a.ms - b.ms);
   const logs = allLogs.filter(
     (p) =>
@@ -224,7 +227,7 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
   const excessOT = 0;
   const exceedsTarget = false;
   const monitoredOT = rawOT["1.5"] + rawOT["3.0"];
-  const highOT = monitoredOT >= 3;
+  const highOT = monitoredOT >= 5;
   const shortfallOT = 0;
   const underTarget = false;
   const targetMet = false;

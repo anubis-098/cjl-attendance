@@ -8,6 +8,13 @@ CREATE TABLE employee_master (
   shift_data jsonb,
   issue text NOT NULL DEFAULT ''
 );
+CREATE TABLE employee_profiles (
+  employee_id text PRIMARY KEY REFERENCES employee_master(employee_id) ON DELETE CASCADE,
+  photo bytea NOT NULL,
+  content_type text NOT NULL CHECK (content_type IN ('image/jpeg','image/png','image/webp')),
+  filename text NOT NULL DEFAULT '',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 CREATE TABLE workspace (
   id integer PRIMARY KEY CHECK (id = 1),
   revision bigint NOT NULL DEFAULT 0,

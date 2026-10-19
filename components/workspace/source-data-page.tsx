@@ -39,6 +39,11 @@ export default function SourceDataPage({
   const master = kind === "employees";
   const [importResult, setImportResult] =
     useState<FingerprintImportSummary | null>(null);
+  const [employeePreview, setEmployeePreview] = useState<{
+    employeeCount: number;
+    issueCount: number;
+    duplicateRows: number;
+  } | null>(null);
   const [employeeMode, setEmployeeMode] = useState("merge");
   const [employeeFilters, setEmployeeFilters] = useState<
     Record<string, string>
@@ -86,28 +91,37 @@ export default function SourceDataPage({
       });
     return () => ctrl.abort();
   }, [kind, master, page, search, version, employeeFilters]);
-  async function upload(selected: File) {
+  async function upload(selected: File, previewOnly = false) {
     setBusy(true);
     setError("");
     setImportResult(null);
+    if (master) setEmployeePreview(null);
     setFile(selected); setLastFileName(selected.name); setProgress(0);
     const controller = new AbortController(); uploadAbort.current = controller;
     try {
       const form = new FormData();
       form.set("mode", kind);
       if (master) form.set("employeeMode", employeeMode);
+      if (master && previewOnly) form.set("previewOnly", "true");
       form.set(master ? "master" : "raw", selected);
       const p = await postFormWithProgress("/api/import", form, setProgress, controller.signal) as {
         fingerprintImport?: FingerprintImportSummary;
-        data: { shifts: { date: string }[] };
+        employeePreview?: { employeeCount: number; issueCount: number; duplicateRows: number };
+        data?: { shifts: { date: string }[] };
       };
+      if (master && previewOnly) {
+        if (!p.employeePreview) throw Error("ตรวจสอบไฟล์พนักงานไม่สำเร็จ");
+        setEmployeePreview(p.employeePreview);
+        return;
+      }
+      setEmployeePreview(null);
       setImportResult(p.fingerprintImport || null);
       await refresh();
       setFilters((prev) => ({
         ...prev,
         date:
           p.fingerprintImport?.to?.slice(0, 10) ||
-          p.data.shifts[0]?.date ||
+          p.data?.shifts[0]?.date ||
           prev.date,
         search: "",
         agency: "all",
@@ -130,6 +144,7 @@ export default function SourceDataPage({
   function discardSelectedFile() {
     uploadAbort.current?.abort(); uploadAbort.current = null;
     setFile(null); setProgress(null); setLastFileName("");
+    setEmployeePreview(null);
     if (fileInput.current) fileInput.current.value = "";
   }
   return (
@@ -189,9 +204,15 @@ export default function SourceDataPage({
           )}
           accept={master ? ".xlsx,.xls,.csv" : ".txt"}
           disabled={busy}
-          onChange={(e) => { const selected = e.target.files?.[0]; setError(""); if (selected) void upload(selected); }}
+          onChange={(e) => { const selected = e.target.files?.[0]; setError(""); setEmployeePreview(null); if (selected) void upload(selected, master); }}
         />
         {(file || lastFileName) && progress !== null && <UploadProgress fileName={lastFileName} progress={progress} busy={busy} onDiscard={discardSelectedFile} />}
+        {master && employeePreview && file && !busy && <div className="employee-import-confirm" role="status">
+          <p>{t("พนักงานที่ตรวจพบ")} <b>{employeePreview.employeeCount.toLocaleString()}</b> · {t("แถวที่ควรตรวจสอบ")} <b>{employeePreview.issueCount.toLocaleString()}</b> · {t("แถวรหัสซ้ำในไฟล์")} <b>{employeePreview.duplicateRows.toLocaleString()}</b></p>
+          <button type="button" className="button calendar-confirm" disabled={busy} onClick={() => void upload(file)}>
+            {t("ยืนยันนำเข้าพนักงาน")}
+          </button>
+        </div>}
         {error && (
           <p className="error" role="alert">
             {t(error)}

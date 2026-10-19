@@ -93,11 +93,11 @@ test("monthly daily wages count regular attended days only, including overnight 
   );
   const exported = buildPayrollExport(report, ["salary"], true);
   assert.equal(
-    exported[1][exported[0].indexOf("ค่าจ้างตามวันทำงานจริง (บาท)")],
+    exported[1][exported[0].indexOf("Wages for Actual Workdays (THB)")],
     "856.80",
   );
   assert.equal(
-    exported[2][exported[0].indexOf("ค่าจ้างตามวันทำงานจริง (บาท)")],
+    exported[2][exported[0].indexOf("Wages for Actual Workdays (THB)")],
     "856.80",
   );
   const missingRate = calculatePayroll(data, "2026-09", "calendar").rows[0];
@@ -172,25 +172,25 @@ test("payroll export separates confirmed and pending amounts, selects columns an
     ],
   };
   const confirmed = buildPayrollExport(report, exportPreset("approved"), true);
-  assert.ok(!confirmed[0].some((h) => h.includes("รอยืนยัน")));
+  assert.ok(!confirmed[0].some((h) => h.includes("Pending Approval")));
   assert.equal(confirmed[1].at(-1), "177.54");
   assert.equal(confirmed[2].at(-1), "177.54");
   assert.equal(confirmed[1][2], 'Name, "Quoted"');
-  assert.ok(confirmed[0].indexOf("Agency") < confirmed[0].indexOf("แผนก"));
+  assert.ok(confirmed[0].indexOf("Agency") < confirmed[0].indexOf("Department"));
   assert.equal(
-    confirmed[1][confirmed[0].indexOf("ค่า Seafoodยืนยันแล้ว (บาท)")],
+    confirmed[1][confirmed[0].indexOf("Approved Seafood Allowance (THB)")],
     "12.36",
   );
   assert.equal(
-    confirmed[1][confirmed[0].indexOf("ค่าความเย็น Frozenยืนยันแล้ว (บาท)")],
+    confirmed[1][confirmed[0].indexOf("Approved Frozen Allowance (THB)")],
     "0.00",
   );
   assert.equal(
-    confirmed[1][confirmed[0].indexOf("ค่ากะยืนยันแล้ว (บาท)")],
+    confirmed[1][confirmed[0].indexOf("Approved Shift Allowance (THB)")],
     "20.60",
   );
   const pending = buildPayrollExport(report, exportPreset("pending"), false);
-  assert.ok(!pending[0].some((h) => h.includes("ยืนยันแล้ว")));
+  assert.ok(!pending[0].some((h) => h.includes("Approved")));
   assert.equal(pending[1].at(-1), "602.49");
   assert.equal(pending.length, 2);
   const custom = buildPayrollExport(
@@ -208,12 +208,13 @@ test("payroll export separates confirmed and pending amounts, selects columns an
   });
   const all = buildPayrollExport(report, exportPreset("all"), true);
   assert.ok(all.every((row) => row.length === all[0].length));
-  const grand = all[0].findIndex((h) => h.startsWith("เงินรวมยืนยันแล้ว"));
-  assert.equal(all[2][grand], "อัตราไม่ครบ");
-  assert.equal(all[3][grand], "อัตราไม่ครบ");
-  const hours = all[0].indexOf("รวม OT ยืนยันแล้ว (ชม.)");
+  const grand = all[0].findIndex((h) => h === "Approved Total Income (THB)");
+  assert.equal(all[2][grand], "RATE INCOMPLETE");
+  assert.equal(all[3][grand], "RATE INCOMPLETE");
+  const hours = all[0].indexOf("Total Approved OT (hours)");
   assert.equal(all[3][hours], "4.00");
-  assert.equal(all[3][all[0].indexOf("ค่าจ้างรายวัน (บาท)")], "");
+  assert.equal(all[3][all[0].indexOf("Daily Wage incl. Service (THB/day)")], "");
+  assert.ok(all[0].every((header) => !/[ก-๙]/.test(header)));
 });
 
 test("standalone settings validate money, derive hourly rates and match explicit department aliases", () => {

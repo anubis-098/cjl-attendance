@@ -35,6 +35,17 @@ export async function POST(request: Request) {
       if (employeeMode !== "replace" && employeeMode !== "merge")
         throw Error("รูปแบบการนำเข้าพนักงานไม่ถูกต้อง");
       const employees = await readEmployeeFile(file("master"));
+      if (form.get("previewOnly") === "true") {
+        const duplicateRows = employees.reduce((sum, employee) => {
+          try { return sum + JSON.parse(employee.source_data.__duplicate_rows || "[]").length; }
+          catch { return sum; }
+        }, 0);
+        return Response.json({ employeePreview: {
+          employeeCount: employees.length,
+          issueCount: employees.filter(employee => employee.issue).length,
+          duplicateRows,
+        } });
+      }
       await updateEmployeeStore(async (c, state) => {
         await writeEmployees(c, employees, employeeMode);
         const base =

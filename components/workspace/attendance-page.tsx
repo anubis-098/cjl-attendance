@@ -164,34 +164,36 @@ export default function AttendancePage() {
     setToast("อนุมัติ " + eligible.length + " รายการแล้ว");
   }
   function exportData() {
+    // `visible` is derived from the current date range, employee filters, and status filter.
+    const rowsToExport = visible;
     downloadCSV("attendance-" + start + "-to-" + days.at(-1) + ".csv", [
       [
         "Employee ID",
         "Name",
         "Date",
-        "Shift",
+        "Shift-in",
+        "Shift-out",
         "In",
         "Out",
-        "Normal hours",
-        "Actual OT",
+        "Actual hour",
+        "Actual Total OT",
         ...OT_RATES.map((rate) => `OT x${rate} (actual hours)`),
-        ...OT_RATES.map((rate) => `OT x${rate} (eligible hours)`),
         "Status",
         "Approved",
       ],
-      ...visible.map((s) => {
+      ...rowsToExport.map((s) => {
         const r = results.get(keyOf(s))!;
         return [
           s.emp_id,
           s.emp_name,
           s.date,
-          s.shift_code,
+          s.shift_start,
+          s.shift_end,
           r.inMs === undefined ? "" : isoLocal(r.inMs).slice(11, 16),
           r.outMs === undefined ? "" : isoLocal(r.outMs).slice(11, 16),
-          number(r.normal),
+          r.missing ? "" : number(r.normal + r.actualOT),
           number(r.actualOT),
           ...OT_RATES.map((rate) => number(r.rawOT[rate])),
-          ...OT_RATES.map((rate) => number(r.otByRate[rate])),
           r.status,
           r.approved,
         ];
@@ -610,7 +612,7 @@ export default function AttendancePage() {
                                             title={t(
                                               r.overBudgetApproved
                                                 ? "ยืนยันโอทีแล้ว"
-                                                : "ชั่วโมง OT x1.5 + x3.0 ตั้งแต่ 3 ชม.",
+                                                : "ชั่วโมง OT x1.5 + x3.0 ตั้งแต่ 5 ชม.",
                                             )}
                                           >
                                             {t("OT สูงเกินเป้า ")}

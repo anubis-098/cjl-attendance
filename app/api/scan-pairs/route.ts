@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     await updateEmployeeStore(async (c, state) => {
       if (Number(state.revision) !== body.revision) throw Error("REVISION_CONFLICT");
       const next = applyManualPairs({ ...current.data, reviews: state.data.reviews, audit: state.data.audit },
-        employee.employee_id, employee.shift_data!.device_emp_id, body.pairs, user.displayName);
+        employee.employee_id, employee.shift_data!.device_emp_id, body.pairs, user.displayName, body.ignoredScans);
       await c.query("UPDATE workspace SET data=$1 WHERE id=1", [JSON.stringify({ ...state.data, reviews: next.reviews, audit: next.audit })]);
     });
     return Response.json(await readWorkspace());

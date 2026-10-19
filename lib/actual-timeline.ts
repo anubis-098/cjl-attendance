@@ -28,6 +28,19 @@ export type ActualInterval = {
 };
 export type ActualTimeline = Map<string, ActualInterval[]>;
 
+function shiftForInterval(shifts: Shift[], interval: ActualInterval) {
+  const start = interval.inMs ?? interval.start;
+  const end = interval.outMs ?? interval.end;
+  return shifts.flatMap(shift => {
+    const window = shiftWindow(shift, shift.date);
+    if (start < window.from || start >= window.to) return [];
+    const containsEnd = end >= window.from && end < window.to;
+    const midpoint = (start + end) / 2;
+    const scheduledMidpoint = (window.start + window.end) / 2;
+    return [{ shift, score: (containsEnd ? 0 : 1e12) + Math.abs(midpoint - scheduledMidpoint) }];
+  }).sort((a, b) => a.score - b.score)[0]?.shift;
+}
+
 // Missing or ambiguous scans always take precedence over the OT colour.
 export function actualCardStatus(actual: ActualInterval, shift: Shift, deductOTBreak = false, approved = false) {
   if (actual.estimated || actual.uncertain) return "missing";
@@ -266,7 +279,9 @@ export function buildActualTimeline(
       });
     }
     const deviceIds = new Set(ordered.map((s) => s.device_emp_id));
-    const sourcePunches = [...deviceIds].flatMap((id) => punchesByEmployee.get(id) || []);
+    const ignored = new Set(ordered.flatMap(s => reviews[keyOf(s)]?.ignoredScans || []));
+    const sourcePunches = [...deviceIds].flatMap((id) => punchesByEmployee.get(id) || [])
+      .filter(p => !ignored.has(punchTime(p.punch_timestamp)));
     // A saved correction may predate a later genuine exit. Show that full raw
     // interval as a review conflict instead of inventing a new eight-hour shift.
     // This does not modify the saved review or approved payroll endpoints.
@@ -299,8 +314,7 @@ export function buildActualTimeline(
     };
     for (const interval of pairActualScans(punches)) {
       const date = isoLocal(interval.start).slice(0, 10);
-      const s =
-        byDate.get(date) ||
+      const s = shiftForInterval(ordered, interval) || byDate.get(date) ||
         byDate.get(isoLocal(interval.inMs ?? interval.outMs!).slice(0, 10));
       if (s) attach(s, interval);
     }

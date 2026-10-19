@@ -37,6 +37,17 @@ Guest ดูเวลาเท่านั้น · Employee ดูเฉพา�
 ยืนยันจับคู่|Confirm pairing
 ยกเลิกคู่นี้|Remove this pair
 ลากจากสแกนเข้าไปยังสแกนออก หรือคลิกสองเวลาเรียงกัน|Drag from the entry scan to the exit scan, or click two times in order
+ลากจากสแกนเข้าไปยังสแกนออก หรือคลิกสองเวลาเรียงกัน · ปิดสแกนที่ไม่มีคู่ได้|Drag from entry to exit, or click two scans in order · Unmatched scans can be disabled
+ปิดสแกนที่ไม่มีคู่|Disable this unmatched scan
+เปิดใช้สแกนนี้|Re-enable this scan
+ปิดแล้ว|Disabled
+บันทึกการจับคู่ / ปิดสแกน|Save pairs / disabled scans
+บันทึกการปิดสแกนที่ไม่มีคู่แล้ว|Unmatched scan disabled
+กรุณาเลือกคู่สแกนหรือสแกนที่ต้องการปิด|Select scan pairs or scans to disable
+เปิดใช้สแกนที่ปิดไว้ก่อนนำมาจับคู่|Re-enable disabled scans before pairing them
+เลือกได้เฉพาะเวลาสแกนจริงของพนักงานคนนี้|Only this employee's actual scans can be selected
+ไม่พบกะ Master ที่ตรงกับเวลาสแกนนี้|No Master shift matches this scan time
+ปิดสแกนที่ไม่มีคู่จากปฏิทิน|Disabled unmatched scan from calendar
 เวลาทั้งหมดเป็นสแกนจริง · จับคู่ข้ามวันได้ · การจับคู่ไม่ใช่การยืนยัน OT|Actual scans only · Overnight pairs supported · Pairing does not approve OT
 เลือกสแกนออก|Select exit scan
 สแกนยังไม่มีคู่|Unpaired scan
@@ -132,7 +143,7 @@ OT หลังกะ|Post-shift OT
 เหตุผล / งานที่ให้ทำ|Reason / assigned work
 เลือกวันเริ่มกะได้หลายวัน ใช้จำนวนชั่วโมงเดียวกันทุกวันที่เลือก คำขอเดิมที่รออนุมัติจะถูกแก้ไข|Select multiple shift dates. The same hours apply to each selected date. Existing pending requests will be updated.
 ระบุ 0 หากไม่ขอช่วงนั้น ขั้นต่ำ 1 ชั่วโมง เพิ่มครั้งละ 0.5 ชั่วโมง อิงเวลากะของแต่ละวัน|Enter 0 to skip a period. Minimum 1 hour, in 0.5-hour increments, relative to each day's shift.
-OT ตั้งแต่ 3 ชั่วโมงขึ้นไป กรุณาตรวจสอบภาระงานก่อนส่งคำขอ|OT is 3 hours or more. Review the workload before submitting.
+OT ตั้งแต่ 5 ชั่วโมงขึ้นไป กรุณาตรวจสอบภาระงานก่อนส่งคำขอ|OT is 5 hours or more. Review the workload before submitting.
 คำขอไม่ยืนยัน OT จริงและไม่เปลี่ยนยอดเงินเดือน|Requests do not confirm actual OT or change payroll amounts.
 คำขอ OT ในเดือนนี้|OT requests this month
 ยังไม่มีคำขอ OT|No OT requests yet
@@ -230,7 +241,7 @@ JPG / PNG / WebP / PDF · ไม่เกิน 5 MB ต่อไฟล์ · �
 ต่อไปช่วงถัดไป →|Continues into next period →
 รอยืนยันอัตรา|Rate confirmation needed
 ยืนยันโอทีแล้ว|OT confirmed
-ชั่วโมง OT x1.5 + x3.0 ตั้งแต่ 3 ชม.|OT x1.5 + x3.0 of 3 hours or more
+ชั่วโมง OT x1.5 + x3.0 ตั้งแต่ 5 ชม.|OT x1.5 + x3.0 of 5 hours or more
 OT สูงเกินเป้า|High OT
 พบสแกน: ตรวจสอบวันลา / ขาดงาน|Punches found: review leave / absence
 OT รอพิจารณา|OT pending review
@@ -677,10 +688,15 @@ OT ก่อน / หลังกะ|Pre-shift / post-shift OT
 OT รวมคำนวณ|Calculated OT total
 · ยืนยันแล้ว|· Confirmed
 หักพัก OT|OT break deduction
-ⓘ OT มากกว่า 3 ชม. โปรดให้หัวหน้างานตรวจสอบ|ⓘ OT over 3 hours. Supervisor review recommended.
+ⓘ OT ตั้งแต่ 5 ชม. โปรดให้หัวหน้างานตรวจสอบ|ⓘ OT is 5 hours or more. Supervisor review recommended.
 แถบแสดงช่วงเวลาสแกนจริง · OT คำนวณปัดลงครึ่งชั่วโมง|Bars show actual punch times · OT rounded down to half hours
 คลิกแถบกะเพื่อดูรายละเอียด / แก้ไข|Click a shift for details / edits
 นำเข้าและบันทึกลงฐานข้อมูล SQL แล้ว|Imported and saved to the SQL database.
+ตรวจสอบไฟล์พนักงานไม่สำเร็จ|Could not validate the employee file.
+พนักงานที่ตรวจพบ|Employees found
+แถวที่ควรตรวจสอบ|Rows to review
+แถวรหัสซ้ำในไฟล์|Duplicate ID rows
+ยืนยันนำเข้าพนักงาน|Confirm employee import
 หัวตารางตามชีต Master Name · พนักงานทั้งหมดในฐานข้อมูล|Headers follow the Master Name sheet · All employees in the database
 ไฟล์ TXT ไม่มี Header · รหัสพนักงาน / ปีเดือนวัน YYYYMMDD / เวลาสแกนนิ้ว HHmm ตาม 3 คอลัมน์ต้นทาง|TXT without headers · Employee ID / YYYYMMDD date / HHmm punch time from the three source columns
 เทียบข้อมูล Attendance|Compare attendance
@@ -934,7 +950,7 @@ Night · ค่ากะดึก / วัน|Night shift allowance / day
 บันทึกกะ|Saved shifts for
 ยืนยันวันหยุด|Confirm holidays
 โปรดตรวจสอบ (Investigate): OT|Review required: OT
-มากกว่า 3.0 ชม. กรุณาให้หัวหน้างานตรวจสอบ|exceeds 3.0 hours. Supervisor review required.
+ตั้งแต่ 5 ชม. กรุณาให้หัวหน้างานตรวจสอบ|5 hours or more. Supervisor review required.
 เบี้ยเลี้ยงแผนก|Department allowance
 บันทึกอัตราเดือน|Save rates for
 ยืนยันเปลี่ยนกะ|Confirm shift changes
@@ -975,4 +991,33 @@ export const thai: Record<string, string> = {
   "COMPANY HOLIDAYS": "วันหยุดองค์กร",
   "Import employee file": "นำเข้าไฟล์พนักงาน",
   "Import fingerprint file": "นำเข้าไฟล์สแกนนิ้ว",
+  "Incomplete scan dashboard": "แดชบอร์ดสแกนไม่ครบ",
+  "Ranked for the selected date range and filters": "จัดอันดับตามช่วงวันและตัวกรองที่เลือก",
+  "incomplete shifts": "กะที่สแกนไม่ครบ",
+  "Departments with most incomplete scans": "แผนกที่สแกนไม่ครบสูงสุด",
+  "Employees with most incomplete scans": "พนักงานที่สแกนไม่ครบสูงสุด",
+  "No incomplete scans in this period": "ไม่พบการสแกนไม่ครบในช่วงนี้",
+  "Unknown department": "ไม่ระบุแผนก",
+  "Unknown company": "ไม่ระบุบริษัท",
+  "Employee profile photo": "รูปโปรไฟล์พนักงาน",
+  "Change profile photo": "เปลี่ยนรูปโปรไฟล์",
+  "Remove photo": "ลบรูป",
+  "Edit profile": "แก้ไขข้อมูล",
+  "Edit employee profile": "แก้ไขข้อมูลพนักงาน",
+  "Department": "แผนก",
+  "Company": "บริษัท",
+  "Shift": "กะทำงาน",
+  "Weekly holiday": "วันหยุดประจำสัปดาห์",
+  "Employment status": "สถานะการทำงาน",
+  "Start date": "วันที่เริ่มงาน",
+  "End date": "วันที่สิ้นสุดงาน",
+  "Full name": "ชื่อ-นามสกุล",
+  "Section": "Section",
+  "Shift code": "รหัสกะ",
+  "Shift starts": "เวลาเริ่มกะ",
+  "Shift ends": "เวลาเลิกกะ",
+  "Contract": "สัญญาจ้าง",
+  "Add employee details with Edit profile": "กดแก้ไขข้อมูลเพื่อเพิ่มรายละเอียดพนักงาน",
+  "Uploading photo": "กำลังอัปโหลดรูป",
+  "Save changes": "บันทึกการเปลี่ยนแปลง",
 };

@@ -7,6 +7,13 @@
 .manual-pair-day.outside-month { background: #f7f8fa; color: #687c90; }
 .manual-pair-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; color: #15805b; z-index: 2; }
 .scan-node { display: flex; align-items: center; justify-content: center; gap: 5px; margin: 10px 0; width: 100%; padding: 6px 3px; border: 1px solid #b8cfe4; border-radius: 7px; color: #1d4e70; background: #edf5fc; cursor: grab; position: relative; z-index: 3; font: inherit; font-variant-numeric: tabular-nums; }
+.scan-node-row { display: flex; align-items: center; gap: 4px; }
+.scan-node-row .scan-node { flex: 1; min-width: 0; }
+.scan-ignore-toggle { display: grid; place-items: center; flex: 0 0 28px; height: 30px; border: 1px solid #d5dde5; border-radius: 7px; color: #64748b; background: #fff; cursor: pointer; }
+.scan-ignore-toggle:hover { border-color: #cc6570; color: #a4313c; background: #fff1f2; }
+.scan-ignore-toggle:disabled { opacity: .45; cursor: not-allowed; }
+.scan-node-disabled, .scan-node-disabled:disabled { color: #77818b; background: #eff1f3; border-color: #c8cdd2; text-decoration: line-through; cursor: default; opacity: 1; }
+.scan-node-row-disabled .scan-ignore-toggle { color: #a4313c; border-color: #e5a5aa; }
 .scan-node i { height: 22px; width: 3px; background: currentColor; border-radius: 2px; }
 .scan-node-selected { outline: 3px solid #599ace; }
 .scan-node-linked, .scan-node-linked:disabled { background: #e4f4ea; border-color: #6daf86; color: #17613c; opacity: 1; cursor: default; }

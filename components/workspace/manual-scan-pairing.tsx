@@ -1,6 +1,6 @@
 "use client";
 import { useLayoutEffect, useRef, useState } from "react";
-import { Link2, Check, X } from "lucide-react";
+import { Link2, Check, X, Ban } from "lucide-react";
 import { useWorkspace } from "./provider";
 import { useTranslation } from "@/lib/i18n";
 import { clock, isoLocal } from "@/lib/engine";
@@ -13,6 +13,10 @@ export default function ManualScanPairing({ employeeId, deviceId, days, month, o
   const { t } = useTranslation();
   const { data, punchesByEmployee, saveScanPairs, setToast } = useWorkspace();
   const [pairs, setPairs] = useState<ScanPair[]>([]);
+  const [ignored, setIgnored] = useState<number[]>(() => Object.entries(data.reviews)
+    .filter(([key]) => key.startsWith(employeeId + "|"))
+    .flatMap(([, review]) => review.ignoredScans || []));
+  const initialIgnored = useRef(new Set(ignored));
   const [start, setStart] = useState<number>();
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -22,6 +26,9 @@ export default function ManualScanPairing({ employeeId, deviceId, days, month, o
   const [lines, setLines] = useState<{ x1: number; y1: number; x2: number; y2: number }[]>([]);
   const scans = [...new Set((punchesByEmployee.get(deviceId) || []).map(p => punchTime(p.punch_timestamp)))]
     .filter(ms => Number.isFinite(ms) && days.includes(isoLocal(ms).slice(0, 10))).sort((a, b) => a - b);
+  const ignoredSet = new Set(ignored);
+  const hasChanges = pairs.length > 0 || ignoredSet.size !== initialIgnored.current.size ||
+    [...ignoredSet].some(ms => !initialIgnored.current.has(ms));
   useLayoutEffect(() => {
     const update = () => {
       const bounds = root.current?.getBoundingClientRect();
@@ -41,17 +48,18 @@ export default function ManualScanPairing({ employeeId, deviceId, days, month, o
   function connect(from: number, to: number) {
     if (busy.current) return;
     try {
+      if (ignoredSet.has(from) || ignoredSet.has(to)) throw Error("เปิดใช้สแกนที่ปิดไว้ก่อนนำมาจับคู่");
       const next = [...pairs, { inMs: from, outMs: to }];
       applyManualPairs(data, employeeId, deviceId, next, "preview");
       setPairs(next); setStart(undefined); setError("");
     } catch (e) { setError(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ"); }
   }
   async function confirm() {
-    if (busy.current || !pairs.length) return;
+    if (busy.current || !hasChanges) return;
     busy.current = true; setSaving(true); onBusy(true);
     try {
-      if (await saveScanPairs(employeeId, pairs)) {
-        setToast("บันทึกการจับคู่แล้ว · ยังไม่ได้ยืนยัน OT");
+      if (await saveScanPairs(employeeId, pairs, ignored)) {
+        setToast(pairs.length ? "บันทึกการจับคู่แล้ว · ยังไม่ได้ยืนยัน OT" : "บันทึกการปิดสแกนที่ไม่มีคู่แล้ว");
         onClose();
       }
     } finally { busy.current = false; setSaving(false); onBusy(false); }
@@ -59,10 +67,10 @@ export default function ManualScanPairing({ employeeId, deviceId, days, month, o
   return <div className="manual-pairing">
     <div className="month-bulk-toolbar">
       <Link2 size={18} /><strong>{t("จับคู่สแกนเอง")}</strong>
-      <span>{t("ลากจากสแกนเข้าไปยังสแกนออก หรือคลิกสองเวลาเรียงกัน")}</span>
+      <span>{t("ลากจากสแกนเข้าไปยังสแกนออก หรือคลิกสองเวลาเรียงกัน · ปิดสแกนที่ไม่มีคู่ได้")}</span>
       <button className="button calendar-cancel" disabled={saving} onClick={onClose}>{t("ยกเลิก")}</button>
-      <button className="button calendar-confirm" disabled={saving || !pairs.length} onClick={confirm}>
-        <Check size={16} />{t(saving ? "กำลังบันทึก..." : "ยืนยันจับคู่")} ({pairs.length})
+      <button className="button calendar-confirm" disabled={saving || !hasChanges} onClick={confirm}>
+        <Check size={16} />{t(saving ? "กำลังบันทึก..." : "บันทึกการจับคู่ / ปิดสแกน")} ({pairs.length})
       </button>
     </div>
     <p className="month-summary" role="status">{start !== undefined
@@ -82,17 +90,22 @@ export default function ManualScanPairing({ employeeId, deviceId, days, month, o
         <b>{day.slice(8)} / {day.slice(5, 7)}</b>
         {scans.filter(ms => isoLocal(ms).startsWith(day)).map(ms => {
           const index = pairs.findIndex(pair => pair.inMs === ms || pair.outMs === ms);
-          return <button key={ms} type="button" data-scan-ms={ms}
+          const disabledScan = ignoredSet.has(ms);
+          return <div className={`scan-node-row ${disabledScan ? "scan-node-row-disabled" : ""}`} key={ms}><button type="button" data-scan-ms={ms}
             ref={node => {if (node) nodes.current.set(ms, node); else nodes.current.delete(ms);}}
-            className={`scan-node ${start === ms ? "scan-node-selected" : ""} ${index >= 0 ? "scan-node-linked" : ""}`}
-            disabled={saving || index >= 0} draggable={!saving && index < 0}
+            className={`scan-node ${start === ms ? "scan-node-selected" : ""} ${index >= 0 ? "scan-node-linked" : ""} ${disabledScan ? "scan-node-disabled" : ""}`}
+            disabled={saving || index >= 0 || disabledScan} draggable={!saving && index < 0 && !disabledScan}
             aria-label={`${t("สแกน")} ${isoLocal(ms).replace("T", " ")}`}
             aria-pressed={start === ms}
             onDragStart={event => {setStart(ms); event.dataTransfer.setData("text/plain", String(ms)); event.dataTransfer.effectAllowed = "link";}}
             onDragOver={event => {event.preventDefault(); event.dataTransfer.dropEffect = "link";}}
             onDrop={event => {event.preventDefault(); const from = Number(event.dataTransfer.getData("text/plain")); if (scans.includes(from)) connect(from, ms);}}
             onClick={() => {if (start === undefined) {setStart(ms); setError("");} else if (start === ms) setStart(undefined); else connect(start, ms);}}
-          ><i />{clock(ms)}{index >= 0 && <small>#{index + 1} {t(pairs[index].inMs === ms ? "เข้า" : "ออก")}</small>}</button>;
+          ><i />{clock(ms)}{index >= 0 && <small>#{index + 1} {t(pairs[index].inMs === ms ? "เข้า" : "ออก")}</small>}{disabledScan && <small>{t("ปิดแล้ว")}</small>}</button><button type="button" className="scan-ignore-toggle" disabled={saving || index >= 0}
+            aria-label={t(disabledScan ? "เปิดใช้สแกนนี้" : "ปิดสแกนที่ไม่มีคู่")}
+            title={t(disabledScan ? "เปิดใช้สแกนนี้" : "ปิดสแกนที่ไม่มีคู่")}
+            onClick={() => { setIgnored(prev => disabledScan ? prev.filter(value => value !== ms) : [...prev, ms]); setStart(undefined); }}>
+            {disabledScan ? <X size={14}/> : <Ban size={14}/>}</button></div>;
         })}
       </div>)}
     </div></div>

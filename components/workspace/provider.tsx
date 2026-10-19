@@ -46,7 +46,7 @@ const empty: Data = {
 type Workspace = {
   workspaceScope: WorkspaceScope;
   setWorkspaceScope: Dispatch<SetStateAction<WorkspaceScope>>;
-  saveScanPairs: (employeeId: string, pairs: ScanPair[]) => Promise<boolean>;
+  saveScanPairs: (employeeId: string, pairs: ScanPair[], ignoredScans?: number[]) => Promise<boolean>;
   saveShifts: (
     employeeId: string,
     dates: string[],
@@ -267,12 +267,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     },
     [apply],
   );
-  const saveScanPairs = useCallback(async (employeeId: string, pairs: ScanPair[]) => {
+  const saveScanPairs = useCallback(async (employeeId: string, pairs: ScanPair[], ignoredScans?: number[]) => {
     if (saving.current) return false;
     saving.current = true;
     try {
       const res = await fetch("/api/scan-pairs", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId, pairs, revision: state.current.revision }) });
+        body: JSON.stringify({ employeeId, pairs, ignoredScans, revision: state.current.revision }) });
       const payload = await res.json();
       if (!res.ok) throw Error(payload.error);
       apply(payload);

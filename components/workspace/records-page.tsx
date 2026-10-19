@@ -58,6 +58,31 @@ export default function RecordsPage({
         ),
     [filtered, results, mode, status],
   );
+  const incompleteDashboard = useMemo(() => {
+    if (mode !== "approvals") return null;
+    const employees = new Map<string, { key: string; name: string; id: string; department: string; agency: string; shift: string; count: number }>();
+    const departments = new Map<string, number>();
+    let incompleteCount = 0;
+    for (const s of filtered) {
+      const r = results.get(keyOf(s));
+      if (!r || r.off || r.nonWorking) continue;
+      const intervals = model.actualTimeline.get(keyOf(s)) || [];
+      const incomplete = r.missing || intervals.some((interval) => interval.estimated || interval.uncertain);
+      if (!incomplete) continue;
+      incompleteCount++;
+      departments.set(s.department || t("Unknown department"), (departments.get(s.department || t("Unknown department")) || 0) + 1);
+      const key = [s.emp_id, s.department, s.agency, s.shift_start, s.shift_end].join("|");
+      const current = employees.get(key) || {
+        key, name: s.emp_name, id: s.emp_id, department: s.department || t("Unknown department"),
+        agency: s.agency || t("Unknown company"), shift: `${s.shift_start}–${s.shift_end}`, count: 0,
+      };
+      current.count++;
+      employees.set(key, current);
+    }
+    const employeeRows = [...employees.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, 8);
+    const departmentRows = [...departments.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, 6);
+    return { employeeRows, departmentRows, incompleteCount, maxEmployee: Math.max(1, ...employeeRows.map((item) => item.count)), maxDepartment: Math.max(1, ...departmentRows.map((item) => item.count)) };
+  }, [filtered, results, model.actualTimeline, mode, t]);
   useEffect(() => {
     setPage(1);
     setSelected([]);
@@ -132,6 +157,41 @@ export default function RecordsPage({
         </button>
       </div>
       <SummaryCards model={model} compact={mode === "approvals"} />
+      {incompleteDashboard && (
+        <section className="incomplete-dashboard panel" aria-label={t("Incomplete scan dashboard")}>
+          <div className="incomplete-dashboard-heading">
+            <div>
+              <h2>{t("Incomplete scan dashboard")}</h2>
+              <p>{t("Ranked for the selected date range and filters")}</p>
+            </div>
+            <span className="incomplete-total">{t(incompleteDashboard.incompleteCount)} {t("incomplete shifts")}</span>
+          </div>
+          <div className="incomplete-dashboard-grid">
+            <div className="incomplete-bars">
+              <h3>{t("Departments with most incomplete scans")}</h3>
+              {incompleteDashboard.departmentRows.length ? incompleteDashboard.departmentRows.map((item) => (
+                <div className="incomplete-bar-row" key={item.name}>
+                  <span className="incomplete-bar-label" title={item.name}>{item.name}</span>
+                  <span className="incomplete-bar-track"><span style={{ width: `${Math.max(6, item.count / incompleteDashboard.maxDepartment * 100)}%` }} /></span>
+                  <b>{t(item.count)}</b>
+                </div>
+              )) : <p className="incomplete-empty">{t("No incomplete scans in this period")}</p>}
+            </div>
+            <div className="incomplete-bars incomplete-employee-bars">
+              <h3>{t("Employees with most incomplete scans")}</h3>
+              {incompleteDashboard.employeeRows.length ? incompleteDashboard.employeeRows.map((item) => (
+                <div className="incomplete-employee-row" key={item.key}>
+                  <div className="incomplete-employee-meta">
+                    <b>{item.name}</b><small>{item.id} · {item.department} · {item.agency} · {item.shift}</small>
+                  </div>
+                  <span className="incomplete-bar-track"><span style={{ width: `${Math.max(6, item.count / incompleteDashboard.maxEmployee * 100)}%` }} /></span>
+                  <b>{t(item.count)}</b>
+                </div>
+              )) : <p className="incomplete-empty">{t("No incomplete scans in this period")}</p>}
+            </div>
+          </div>
+        </section>
+      )}
       <section className="panel">
         <Filters model={model}>
           <StatusFilter

@@ -63,7 +63,7 @@ test("worked weekly holiday pays confirmed x2/x3 once with no daily holiday wage
   assert.equal(cards[15].amount, 1060.3);
   const csv = buildPayrollExport(report, ["salary", "approvedMoney"], true);
   assert.equal(
-    csv[1][csv[0].indexOf("รวมค่าจ้าง + OT และเบี้ยเลี้ยงยืนยันแล้ว (บาท)")],
+    csv[1][csv[0].indexOf("Wages + Approved OT + Allowances (THB)")],
     "1060.30",
   );
   data.reviews["H|2026-09-01"].otRulesVersion = 3;
@@ -121,7 +121,7 @@ test("holiday wages pay scheduled days without punches, once per date, and expor
   );
   assert.equal(cards[15].amount, 960);
   const csv = buildPayrollExport(report, ["salary"], true);
-  const column = csv[0].indexOf("รวมค่าจ้างวันหยุด (บาท)");
+  const column = csv[0].indexOf("Total Holiday Wages (THB)");
   assert.equal(csv[1][column], "960.00");
   assert.equal(csv[2][column], "960.00");
   const unknown = calculatePayroll(data, "2026-09", "calendar").rows[0];
