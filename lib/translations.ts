@@ -436,6 +436,18 @@ OT รวมในรายงาน|Report OT total
 หน้า|Page
 ถัดไป|Next
 เลือกข้อมูลส่งออก CSV|Select CSV export data
+เลือกชุดข้อมูล|Choose an export preset
+เลือกชุดที่ต้องการส่งออก ระบบจะเลือกหมวดข้อมูลให้โดยอัตโนมัติ|Choose a preset and its data groups will be selected automatically.
+ชุดที่เลือก|Selected preset
+ปรับแต่งหมวดข้อมูลเอง|Customize data groups
+รหัส ชื่อ Agency แผนก และรอบคำนวณจะถูกรวมในไฟล์เสมอ|Employee ID, name, agency, department, and pay period are always included.
+ชั่วโมงและยอด OT รวมเบี้ยเลี้ยงที่ยืนยันแล้ว|Approved OT hours and amounts, allowances included
+รายการ OT และเบี้ยเลี้ยงที่ยังรอ Supervisor ยืนยัน|OT and allowances awaiting supervisor confirmation
+ค่าจ้าง วันทำงาน วันหยุด และวันลา|Wages, working days, holidays, and leave
+ทุกหมวดข้อมูล ทั้งยืนยันแล้ว รอยืนยัน และข้อมูลประกอบ|All groups, including approved, pending, and reference data
+ส่งออกไม่ได้: พบพนักงานสแกนไม่ครบ|Export blocked: employees have incomplete scans
+กรุณาตรวจสอบรายการสแกนไม่ครบก่อนส่งออก|Review incomplete scan records before exporting.
+และอีก|and
 ปิดหน้าต่างส่งออก|Close export dialog
 รอบ|Period
 ถึง|to

@@ -2489,15 +2489,122 @@ h4 {
 .payroll-export-body > small {
   color: #637588;
 }
-.payroll-export-presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.payroll-export-warning {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #efb0aa;
+  border-radius: 9px;
+  background: #fff0ee;
+  color: #8c2626;
 }
-.payroll-export-presets [aria-pressed="true"] {
+.payroll-export-presets {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+}
+.payroll-export-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.payroll-export-section-heading h3 {
+  margin: 0 0 4px;
+}
+.payroll-export-section-heading p,
+.payroll-export-custom > p {
+  margin: 0;
+  color: #637588;
+  font-size: 13px;
+}
+.payroll-export-section-heading > span {
+  color: var(--brand-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+.payroll-export-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.payroll-export-preset-card {
+  position: relative;
+  display: flex;
+  min-height: 76px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 42px 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  color: #263b4e;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.payroll-export-preset-card:hover {
+  border-color: #83b9d8;
+  background: #f8fcff;
+}
+.payroll-export-preset-card[aria-pressed="true"] {
   border-color: var(--brand-strong);
   background: #edf7fd;
   color: var(--brand-strong);
+  box-shadow: 0 0 0 2px #1a83b522;
+}
+.payroll-export-preset-card > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+.payroll-export-preset-copy {
+  display: grid;
+  gap: 4px;
+}
+.payroll-export-preset-copy small {
+  color: #637588;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.payroll-export-preset-check {
+  position: absolute;
+  top: 11px;
+  right: 12px;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid #bdcbd6;
+  border-radius: 50%;
+  color: transparent;
+  font-size: 12px;
+}
+.payroll-export-preset-card[aria-pressed="true"] .payroll-export-preset-check {
+  border-color: var(--brand-strong);
+  background: var(--brand-strong);
+  color: white;
+}
+.payroll-export-preset-card:focus-visible,
+.payroll-export-custom summary:focus-visible {
+  outline: 2px solid var(--brand-strong);
+  outline-offset: 2px;
+}
+.payroll-export-custom {
+  margin: 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfdff;
+}
+.payroll-export-custom summary {
+  padding: 12px 14px;
+  color: #30485e;
+  font-weight: 700;
+  cursor: pointer;
+}
+.payroll-export-custom > p {
+  padding: 0 14px 8px;
 }
 .payroll-export-options {
   display: grid;
@@ -2539,6 +2646,13 @@ h4 {
   margin-bottom: 10px;
 }
 @media (max-width: 600px) {
+  .payroll-export-preset-grid {
+    grid-template-columns: 1fr;
+  }
+  .payroll-export-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .payroll-export-options {
     grid-template-columns: 1fr;
   }

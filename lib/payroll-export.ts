@@ -82,16 +82,24 @@ export function buildPayrollExport(
     { label: "ลำดับ", value: (_, i) => i + 1 },
     { label: "รหัสพนักงาน", value: (r) => r.id },
     { label: "ชื่อ-นามสกุล", value: (r) => r.name },
-    { label: "แผนก", value: (r) => r.department },
     { label: "Agency", value: (r) => r.agency },
+    { label: "แผนก", value: (r) => r.department },
     { label: "เริ่มรอบ", value: () => report.period.from },
     { label: "สิ้นสุดรอบ", value: () => report.period.to },
   ];
   const add = (label: string, value: Column["value"], sum = true) =>
     columns.push({ label, value, sum, numeric: true });
   if (selected.includes("rates")) {
-    add("ค่าจ้างฐานรายวัน (บาท)", (r) => r.rate?.baseDailyWage ?? r.rate?.dailyWage ?? null, false);
-    add("Service ค่าแรง (%)", (r) => r.rate?.wageServicePercent ?? r.rate?.servicePercent ?? 0, false);
+    add(
+      "ค่าจ้างฐานรายวัน (บาท)",
+      (r) => r.rate?.baseDailyWage ?? r.rate?.dailyWage ?? null,
+      false,
+    );
+    add(
+      "Service ค่าแรง (%)",
+      (r) => r.rate?.wageServicePercent ?? r.rate?.servicePercent ?? 0,
+      false,
+    );
     add("Service OT (%)", (r) => r.rate?.servicePercent ?? 0, false);
     add("ค่าจ้างรายวัน (บาท)", (r) => r.rate?.dailyWage ?? null, false);
     for (const rate of OT_RATES)
@@ -117,12 +125,31 @@ export function buildPayrollExport(
           (r) => r[`${status}Amounts`][rate],
         );
       add(`รวมเงิน OT ${label} (บาท)`, (r) => r[`${status}Total`]);
-      add(`Service รวมอยู่ในเงิน OT ${label} (บาท)`, (r) => r[`${status}ServiceTotal`]);
+      add(
+        `Service รวมอยู่ในเงิน OT ${label} (บาท)`,
+        (r) => r[`${status}ServiceTotal`],
+      );
     }
     if (selected.includes(`${status}Allowances`)) {
+      const sumDepartmentAllowance = (r: Row, kind: "seafood" | "frozen") =>
+        moneyTotal(
+          r.days
+            .filter(
+              (day) =>
+                day.approved === (status === "approved") &&
+                day.departmentKind === kind,
+            )
+            .map((day) => day.departmentAllowance),
+        );
       add(
         `เบี้ยเลี้ยงแผนก${label} (บาท)`,
         (r) => r[`${status}Allowances`].department,
+      );
+      add(`ค่า Seafood${label} (บาท)`, (r) =>
+        sumDepartmentAllowance(r, "seafood"),
+      );
+      add(`ค่าความเย็น Frozen${label} (บาท)`, (r) =>
+        sumDepartmentAllowance(r, "frozen"),
       );
       add(`ค่ากะ${label} (บาท)`, (r) => r[`${status}Allowances`].shift);
       add(
@@ -173,15 +200,33 @@ export function buildPayrollExport(
   }
   if (selected.includes("salary")) {
     add("วันทำงานจริง ไม่รวมวันหยุด (วัน)", (r) => r.workedDays);
-    add("ฐานค่าจ้างรายวัน (บาท/วัน)", (r) => r.rate?.baseDailyWage ?? r.rate?.dailyWage ?? null, false);
-    add("Service ค่าจ้าง (%)", (r) => r.rate?.wageServicePercent ?? r.rate?.servicePercent ?? 0, false);
-    add("ค่าจ้างรายวันรวม Service (บาท/วัน)", (r) => r.rate?.dailyWage ?? null, false);
+    add(
+      "ฐานค่าจ้างรายวัน (บาท/วัน)",
+      (r) => r.rate?.baseDailyWage ?? r.rate?.dailyWage ?? null,
+      false,
+    );
+    add(
+      "Service ค่าจ้าง (%)",
+      (r) => r.rate?.wageServicePercent ?? r.rate?.servicePercent ?? 0,
+      false,
+    );
+    add(
+      "ค่าจ้างรายวันรวม Service (บาท/วัน)",
+      (r) => r.rate?.dailyWage ?? null,
+      false,
+    );
     add("ค่าจ้างตามวันทำงานจริง (บาท)", (r) => r.dailyWageTotal);
-    add("Service รวมอยู่ในค่าจ้างวันทำงานจริง (บาท)", (r) => r.wageServiceTotal);
+    add(
+      "Service รวมอยู่ในค่าจ้างวันทำงานจริง (บาท)",
+      (r) => r.wageServiceTotal,
+    );
     add("วันหยุดนักขัตฤกษ์ที่จ่ายค่าจ้าง (วัน)", (r) => r.publicHolidayDays);
     add("ค่าวันหยุดนักขัตฤกษ์ (บาท)", (r) => r.publicHolidayWage);
     add("วันหยุดประจำสัปดาห์ที่มาทำงาน (วัน)", (r) => r.weeklyWorkedDays);
-    add("OT วันหยุดประจำสัปดาห์ยืนยันแล้ว รวมอยู่ในยอด OT (บาท)", (r) => r.weeklyApprovedOTTotal);
+    add(
+      "OT วันหยุดประจำสัปดาห์ยืนยันแล้ว รวมอยู่ในยอด OT (บาท)",
+      (r) => r.weeklyApprovedOTTotal,
+    );
     add("รวมค่าจ้างวันหยุด (บาท)", (r) => r.holidayWageTotal);
     add(
       "รวมค่าจ้าง + OT และเบี้ยเลี้ยงยืนยันแล้ว (บาท)",
@@ -213,4 +258,12 @@ export function buildPayrollExport(
       }),
     );
   return result;
+}
+
+function moneyTotal(values: number[]) {
+  return (
+    Math.round(
+      (values.reduce((sum, value) => sum + value, 0) + Number.EPSILON) * 100,
+    ) / 100
+  );
 }

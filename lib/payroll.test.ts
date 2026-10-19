@@ -152,7 +152,22 @@ test("payroll export separates confirmed and pending amounts, selects columns an
         holidayWageTotal: 385.56,
         salaryWithApprovedOT: 563.1,
         projectedSalary: 1165.59,
-        days: [],
+        days: [
+          {
+            date: "2026-09-01",
+            code: "M",
+            status: "approved",
+            approved: true,
+            hours: { "1.0": 0, "1.5": 0, "2.0": 0, "3.0": 0 },
+            departmentAllowance: 12.36,
+            shiftAllowance: 20.6,
+            allowanceNote: "",
+            paidWorkday: true,
+            worked: true,
+            shiftKind: "M",
+            departmentKind: "seafood",
+          },
+        ],
       },
     ],
   };
@@ -161,6 +176,19 @@ test("payroll export separates confirmed and pending amounts, selects columns an
   assert.equal(confirmed[1].at(-1), "177.54");
   assert.equal(confirmed[2].at(-1), "177.54");
   assert.equal(confirmed[1][2], 'Name, "Quoted"');
+  assert.ok(confirmed[0].indexOf("Agency") < confirmed[0].indexOf("แผนก"));
+  assert.equal(
+    confirmed[1][confirmed[0].indexOf("ค่า Seafoodยืนยันแล้ว (บาท)")],
+    "12.36",
+  );
+  assert.equal(
+    confirmed[1][confirmed[0].indexOf("ค่าความเย็น Frozenยืนยันแล้ว (บาท)")],
+    "0.00",
+  );
+  assert.equal(
+    confirmed[1][confirmed[0].indexOf("ค่ากะยืนยันแล้ว (บาท)")],
+    "20.60",
+  );
   const pending = buildPayrollExport(report, exportPreset("pending"), false);
   assert.ok(!pending[0].some((h) => h.includes("ยืนยันแล้ว")));
   assert.equal(pending[1].at(-1), "602.49");

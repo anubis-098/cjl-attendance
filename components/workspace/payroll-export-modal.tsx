@@ -1,7 +1,14 @@
 "use client";
 import { useTranslation } from "@/lib/i18n";
 import { useMemo, useState } from "react";
-import { Download, X } from "lucide-react";
+import {
+  BadgeCheck,
+  Clock3,
+  Download,
+  Layers3,
+  WalletCards,
+  X,
+} from "lucide-react";
 import {
   buildPayrollExport,
   EXPORT_GROUPS,
@@ -33,6 +40,45 @@ export default function PayrollExportModal({
     () => buildPayrollExport(report, selected, totals),
     [report, selected, totals],
   );
+  const incompleteRows = report.rows.filter((row) => row.missing > 0);
+  const presets = [
+    {
+      id: "approved",
+      title: "ยืนยันแล้วเท่านั้น",
+      description: "ชั่วโมงและยอด OT รวมเบี้ยเลี้ยงที่ยืนยันแล้ว",
+      icon: BadgeCheck,
+      groups: exportPreset("approved"),
+    },
+    {
+      id: "pending",
+      title: "รอยืนยันเท่านั้น",
+      description: "รายการ OT และเบี้ยเลี้ยงที่ยังรอ Supervisor ยืนยัน",
+      icon: Clock3,
+      groups: exportPreset("pending"),
+    },
+    {
+      id: "salarySummary",
+      title: "สรุปเงินเดือน",
+      description: "ค่าจ้าง วันทำงาน วันหยุด และวันลา",
+      icon: WalletCards,
+      groups: ["salary", "leave", "publicHolidays"] as ExportGroup[],
+    },
+    {
+      id: "all",
+      title: "ข้อมูลทั้งหมด",
+      description: "ทุกหมวดข้อมูล ทั้งยืนยันแล้ว รอยืนยัน และข้อมูลประกอบ",
+      icon: Layers3,
+      groups: exportPreset("all"),
+    },
+  ] as const;
+  const selectedPreset = presets.find(
+    (preset) =>
+      JSON.stringify([...selected].sort()) ===
+      JSON.stringify([...preset.groups].sort()),
+  )?.id;
+  const selectedPresetTitle = presets.find(
+    (preset) => preset.id === selectedPreset,
+  )?.title;
   return (
     <div className="overlay modal-overlay" onClick={onClose}>
       <section
@@ -65,63 +111,98 @@ export default function PayrollExportModal({
             {t(" ·")}
             {t(" ")}
             {t(report.rows.length)}
-            {t(selectedOnly ? " คน เฉพาะพนักงานที่เลือก" : " คน ตามตัวกรองปัจจุบัน รวมทุกหน้าตาราง")}
-          </p>
-          <div
-            className="payroll-export-presets"
-            aria-label={t("ชุดข้อมูลส่งออก")}
-          >
-            {(
-              [
-                ["approved", "ยืนยันแล้วเท่านั้น"],
-                ["pending", "รอยืนยันเท่านั้น"],
-                ["all", "ข้อมูลทั้งหมด"],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                className="button"
-                aria-pressed={
-                  JSON.stringify(selected.slice().sort()) ===
-                  JSON.stringify(exportPreset(id).sort())
-                }
-                onClick={() => setSelected(exportPreset(id))}
-              >
-                {t(label)}
-              </button>
-            ))}
-            <button className="button" onClick={() => setSelected([])}>
-              {t("ล้างตัวเลือก")}
-            </button>
-          </div>
-          <p>
             {t(
-              "เลือกข้อมูลเพิ่มเติมได้เอง · รหัส ชื่อ แผนก Agency และรอบคำนวณจะส่งออกเสมอ",
+              selectedOnly
+                ? " คน เฉพาะพนักงานที่เลือก"
+                : " คน ตามตัวกรองปัจจุบัน รวมทุกหน้าตาราง",
             )}
           </p>
-          <div className="payroll-export-options">
-            {["ยืนยันแล้ว", "รอยืนยัน", "ข้อมูลประกอบ"].map((section) => (
-              <fieldset key={section}>
-                <legend>{t(section)}</legend>
-                {EXPORT_GROUPS.filter((g) => g.section === section).map((g) => (
-                  <label key={g.id}>
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(g.id)}
-                      onChange={(e) =>
-                        setSelected((prev) =>
-                          e.target.checked
-                            ? [...prev, g.id]
-                            : prev.filter((id) => id !== g.id),
-                        )
-                      }
-                    />
-                    <span>{t(g.label)}</span>
-                  </label>
-                ))}
-              </fieldset>
-            ))}
-          </div>
+          {incompleteRows.length > 0 && (
+            <div className="payroll-export-warning" role="alert">
+              <strong>{t("ส่งออกไม่ได้: พบพนักงานสแกนไม่ครบ")}</strong>
+              <span>
+                {t("กรุณาตรวจสอบรายการสแกนไม่ครบก่อนส่งออก")}{" "}
+                {incompleteRows
+                  .slice(0, 5)
+                  .map((row) => `${row.id} ${row.name} (${row.missing})`)
+                  .join(", ")}
+                {incompleteRows.length > 5 &&
+                  ` ${t("และอีก")} ${incompleteRows.length - 5} ${t("คน")}`}
+              </span>
+            </div>
+          )}
+          <section
+            className="payroll-export-presets"
+            aria-labelledby="export-preset-heading"
+          >
+            <div className="payroll-export-section-heading">
+              <div>
+                <h3 id="export-preset-heading">{t("เลือกชุดข้อมูล")}</h3>
+                <p>
+                  {t(
+                    "เลือกชุดที่ต้องการส่งออก ระบบจะเลือกหมวดข้อมูลให้โดยอัตโนมัติ",
+                  )}
+                </p>
+              </div>
+              {selectedPresetTitle && (
+                <span>
+                  {t("ชุดที่เลือก")}: {t(selectedPresetTitle)}
+                </span>
+              )}
+            </div>
+            <div className="payroll-export-preset-grid">
+              {presets.map(({ id, title, description, icon: Icon, groups }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="payroll-export-preset-card"
+                  aria-pressed={selectedPreset === id}
+                  onClick={() => setSelected([...groups])}
+                >
+                  <Icon size={20} aria-hidden="true" />
+                  <span className="payroll-export-preset-copy">
+                    <strong>{t(title)}</strong>
+                    <small>{t(description)}</small>
+                  </span>
+                  <span
+                    className="payroll-export-preset-check"
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+          <details className="payroll-export-custom">
+            <summary>{t("ปรับแต่งหมวดข้อมูลเอง")}</summary>
+            <p>{t("รหัส ชื่อ Agency แผนก และรอบคำนวณจะถูกรวมในไฟล์เสมอ")}</p>
+            <div className="payroll-export-options">
+              {["ยืนยันแล้ว", "รอยืนยัน", "ข้อมูลประกอบ"].map((section) => (
+                <fieldset key={section}>
+                  <legend>{t(section)}</legend>
+                  {EXPORT_GROUPS.filter((g) => g.section === section).map(
+                    (g) => (
+                      <label key={g.id}>
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(g.id)}
+                          onChange={(e) =>
+                            setSelected((prev) =>
+                              e.target.checked
+                                ? [...prev, g.id]
+                                : prev.filter((id) => id !== g.id),
+                            )
+                          }
+                        />
+                        <span>{t(g.label)}</span>
+                      </label>
+                    ),
+                  )}
+                </fieldset>
+              ))}
+            </div>
+          </details>
           <label className="payroll-export-total">
             <input
               type="checkbox"
@@ -180,14 +261,12 @@ export default function PayrollExportModal({
             {t("ยกเลิก")}
           </button>
           <button
-            className="button"
-            onClick={() => setSelected(["salary", "leave", "publicHolidays"])}
-          >
-            {t("สรุปเงินเดือน")}
-          </button>
-          <button
             className="button primary"
-            disabled={!selected.length || !report.rows.length}
+            disabled={
+              !selected.length ||
+              !report.rows.length ||
+              incompleteRows.length > 0
+            }
             onClick={() => {
               downloadCSV(filename, csv);
               onClose();
