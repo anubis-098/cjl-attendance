@@ -343,6 +343,12 @@ PH · วันหยุดประเพณีองค์กร (ทุกพ
 ค้นหาชื่อ หรือรหัสพนักงาน...|Search employee name or ID...
 ทุก Agency|All agencies
 แผนก|Department
+Section|Section
+ประเภทสัญญา|Contract type
+R · วันสิ้นสุดงานตาม Master: |R · Master employment end date:
+ · ซ่อนกะหลังวันที่นี้| · shifts are hidden after this date
+วันที่ออกตาม Master|Master departure date
+Master ระบุลาออก แต่ไม่มีวันที่ออก · ระบบยังไม่ตัดกะ เพื่อไม่เดาวันสิ้นสุด|Master marks the employee as resigned but has no end date. Shifts remain until a date is provided.
 ทุกแผนก|All departments
 กะ|Shift
 ทุกกะ|All shifts

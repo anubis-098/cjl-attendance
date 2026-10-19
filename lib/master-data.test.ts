@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { readEmployeeFile } from "./master-data";
+import { normalizeMasterDate, readEmployeeFile } from "./master-data";
 import { masterDate } from "./master-comparison";
 import { normalizeDepartment } from "./departments";
 import { prepareEmployeeMerge } from "./employee-import";
@@ -16,6 +16,53 @@ import {
   validateShiftChange,
 } from "./shift-overrides";
 import { reconcile, type Shift } from "./engine";
+import { isWeeklyHoliday, weeklyHolidayDays } from "./master-calendar";
+
+test("latest master fields normalize departure dates and identify weekly rest days", () => {
+  assert.equal(normalizeMasterDate(46293), "2026-09-28");
+  assert.equal(normalizeMasterDate("9/28/26"), "2026-09-28");
+  assert.equal(normalizeMasterDate("2026-02-30"), "");
+  assert.deepEqual(weeklyHolidayDays("อาทิตย์"), [0]);
+  assert.deepEqual(weeklyHolidayDays("วันอาทิตย์, Wednesday"), [0, 3]);
+  assert.equal(isWeeklyHoliday("อาทิตย์", "2026-10-18"), true);
+  assert.equal(isWeeklyHoliday("อาทิตย์", "2026-10-19"), false);
+});
+
+test("latest Section field drives employee section and master departure date", async () => {
+  const record: Record<string, string | number> = {
+    ลำดับ: 1,
+    รหัส: "MST001",
+    "ชื่อ-นามสกุล": "Test person",
+    แผนก: "CDC Fresh Food Operation",
+    Section: "Frozen",
+    "กะทำงาน": "M",
+    "เวลาทำงาน": "08:00-17:00",
+    "First Time": "08:00",
+    "Last Time": "17:00",
+    "วันหยุด": "อาทิตย์",
+    Status: "Active",
+    Sup: "Agency",
+    Contract: "Normal",
+    "วันที่ออก": 46293,
+  };
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet([
+      [...MASTER_HEADERS],
+      MASTER_HEADERS.map((header) => record[header] ?? ""),
+    ]),
+    "Master data",
+  );
+  const [employee] = await readEmployeeFile(
+    new File([XLSX.write(workbook, { type: "array", bookType: "xlsx" })], "latest.xlsx"),
+  );
+  assert.equal(employee.source_data.Section, "Frozen");
+  assert.equal(employee.source_data["วันหยุด"], "อาทิตย์");
+  assert.equal(employee.source_data["วันที่ออก"], "2026-09-28");
+  assert.equal(employee.shift_data?.department, "Frozen");
+  assert.equal(employee.shift_data?.source_department, "Frozen");
+});
 
 test("employee merge retains unrelated schedules and reviews and refreshes imported master shifts", () => {
   const data = demoData();
@@ -193,7 +240,7 @@ test("master import preserves source headers and duplicate source rows", async (
   const duplicate = rows.find((r) => r.employee_id === "BE001266")!;
   assert.ok(duplicate.shift_data);
   assert.equal(JSON.parse(duplicate.source_data.__duplicate_rows).length, 1);
-  assert.ok(Object.hasOwn(duplicate.source_data, "Satatus"));
+  assert.ok(Object.hasOwn(duplicate.source_data, "Status"));
   assert.ok(rows.some((r) => r.shift_data === null));
   const variants = rows.filter(
     (r) =>

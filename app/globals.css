@@ -1520,6 +1520,28 @@ html[lang="en"] .account-email-field > label { grid-template-rows: 60px 44px; }
   padding: 2px 6px;
   font-weight: 700;
 }
+.resignation-day-code {
+  margin-left: 4px;
+  border-color: #dd9898;
+  background: #fff0ef;
+  color: #982f35;
+}
+.employee-resignation-notice,
+.employee-resignation-warning {
+  width: fit-content;
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+.employee-resignation-notice {
+  background: #fff0ef;
+  color: #8d3439;
+}
+.employee-resignation-warning {
+  background: #fff5dc;
+  color: #735513;
+}
 .month-day.outside-month {
   opacity: 0.55;
 }

@@ -14,6 +14,39 @@ export type EmployeeRow = {
   > | null;
   issue: string;
 };
+
+export function normalizeMasterDate(raw: unknown, formatted = "") {
+  let year: number, month: number, day: number;
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    const date = XLSX.SSF.parse_date_code(raw);
+    if (!date) return "";
+    ({ y: year, m: month, d: day } = date);
+  } else {
+    const value = String(raw ?? formatted).trim();
+    const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    const slash = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+    if (iso) {
+      year = Number(iso[1]);
+      month = Number(iso[2]);
+      day = Number(iso[3]);
+    } else if (slash) {
+      const first = Number(slash[1]);
+      const second = Number(slash[2]);
+      const y = Number(slash[3]);
+      year = y < 100 ? 2000 + y : y;
+      month = first > 12 ? second : first;
+      day = first > 12 ? first : second;
+    } else return "";
+  }
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) return "";
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 export async function readEmployeeFile(file: File): Promise<EmployeeRow[]> {
   if (file.size > 10 * 1024 * 1024) throw Error("ไฟล์ต้องไม่เกิน 10 MB");
   const w = XLSX.read(await file.arrayBuffer(), { type: "array" });
@@ -27,6 +60,8 @@ export async function readEmployeeFile(file: File): Promise<EmployeeRow[]> {
     const source = Object.fromEntries(
       MASTER_HEADERS.map((h, c) => [h, String(formatted[i]?.[c] ?? "").trim()]),
     );
+    source["เริ่มงาน"] = normalizeMasterDate(r[9], source["เริ่มงาน"]);
+    source["วันที่ออก"] = normalizeMasterDate(r[19], source["วันที่ออก"]);
     const pair = String(r[6]).trim().split(/[-–—]/).map(parseCJTime);
     const start = parseCJTime(String(r[7]).trim() === "" ? pair[0] : r[7]),
       end = parseCJTime(String(r[8]).trim() === "" ? pair[1] : r[8]);
@@ -48,7 +83,8 @@ export async function readEmployeeFile(file: File): Promise<EmployeeRow[]> {
             emp_id: id,
             device_emp_id: id,
             emp_name: source["ชื่อ-นามสกุล"],
-            department: normalizeDepartment(source["แผนก"]),
+            department: normalizeDepartment(source.Section || source["แผนก"]),
+            source_department: normalizeDepartment(source.Section || source["แผนก"]),
             agency: source.Sup,
             shift_code: source["กะทำงาน"],
             shift_start: start!,

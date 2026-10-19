@@ -19,6 +19,9 @@ export function visibleWorkspace<T extends { data: Data; employees: { employee_i
     audit: [],
     evidenceImageCounts: Object.fromEntries(Object.entries(workspace.data.evidenceImageCounts || {}).filter(([key]) => matches(key.split("|")[0]))),
     companyHolidays: workspace.data.companyHolidays,
+    employeeWeeklyHolidays: Object.fromEntries(Object.entries(workspace.data.employeeWeeklyHolidays || {}).filter(([id]) => matches(id))),
+    employeeEndDates: Object.fromEntries(Object.entries(workspace.data.employeeEndDates || {}).filter(([id]) => matches(id))),
+    employeesResignedWithoutDate: (workspace.data.employeesResignedWithoutDate || []).filter(matches),
     calendarRemarks: workspace.data.calendarRemarks?.filter(r => !r.employeeId || matches(r.employeeId)),
     shiftOverrides: Object.fromEntries(Object.entries(workspace.data.shiftOverrides || {}).filter(([key]) => matches(key.split("|")[0]))),
   };

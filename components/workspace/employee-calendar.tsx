@@ -20,6 +20,7 @@ import {
   type Shift,
 } from "@/lib/engine";
 import { normalizeDayCode } from "@/lib/day-codes";
+import { isWeeklyHoliday } from "@/lib/master-calendar";
 import {
   addDays,
   approveShifts,
@@ -125,9 +126,17 @@ export default function EmployeeCalendar({
     addDays(gridStart, i),
   );
   const employeeShifts = useMemo(
-    () => data.shifts.filter((s) => s.emp_id === employeeId),
-    [data.shifts, employeeId],
+    () =>
+      data.shifts.filter(
+        (s) =>
+          s.emp_id === employeeId &&
+          (!data.employeeEndDates?.[employeeId] ||
+            s.date <= data.employeeEndDates[employeeId]),
+      ),
+    [data.shifts, data.employeeEndDates, employeeId],
   );
+  const resignationDate = data.employeeEndDates?.[employeeId];
+  const resignedWithoutDate = data.employeesResignedWithoutDate?.includes(employeeId) || false;
   const employee = employeeShifts[0];
   const actualTimeline = useMemo(
     () => buildActualTimeline(employeeShifts, punchesByEmployee, data.reviews),
@@ -242,6 +251,18 @@ export default function EmployeeCalendar({
             {employee ? ` · ${employee.department} · ${employee.agency}` : ""}
             {t(" · ปฏิทินรายเดือน")}
           </p>
+          {resignationDate && (
+            <p className="employee-resignation-notice">
+              {t("R · วันสิ้นสุดงานตาม Master: ")}
+              {t(resignationDate)}
+              {t(" · ซ่อนกะหลังวันที่นี้")}
+            </p>
+          )}
+          {resignedWithoutDate && (
+            <p className="employee-resignation-warning" role="status">
+              {t("Master ระบุลาออก แต่ไม่มีวันที่ออก · ระบบยังไม่ตัดกะ เพื่อไม่เดาวันสิ้นสุด")}
+            </p>
+          )}
         </div>
       </div>
       <section
@@ -585,10 +606,20 @@ export default function EmployeeCalendar({
                 >
                   {weekDays.map((date, i) => {
                     const shift = shiftsByDate.get(date);
-                    const code = shift
+                    const shiftCode = shift
                       ? normalizeDayCode(shift.shift_code)
                       : "";
+                    const masterWeeklyHoliday = isWeeklyHoliday(
+                      data.employeeWeeklyHolidays?.[employeeId],
+                      date,
+                    );
+                    const code =
+                      masterWeeklyHoliday &&
+                      (!shift || ["1", "M", "D", "A", "N"].includes(shiftCode))
+                        ? "H"
+                        : shiftCode;
                     const holiday = Object.hasOwn(holidayLabels, code);
+                    const departure = resignationDate === date;
                     return (
                       <div
                         key={date}
@@ -607,7 +638,17 @@ export default function EmployeeCalendar({
                             {t(code)}
                           </span>
                         )}
-                        {!shift && <small>{t("ไม่มีข้อมูลกะ")}</small>}
+                        {departure && (
+                          <span
+                            className="holiday-day-code resignation-day-code"
+                            title={t("วันที่ออกตาม Master")}
+                          >
+                            R
+                          </span>
+                        )}
+                        {!shift && !holiday && !departure && (
+                          <small>{t("ไม่มีข้อมูลกะ")}</small>
+                        )}
                         {data.shiftOverrides?.[employeeId + "|" + date] && (
                           <small
                             title={

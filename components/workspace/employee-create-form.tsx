@@ -20,7 +20,7 @@ export default function EmployeeCreateForm({onCreated}:{onCreated:()=>void}) {
     catch(e){setError(e instanceof Error?e.message:"โหลดข้อมูลไม่สำเร็จ");}finally{setLoading(false);}
   }
   function change(header:string,value:string) {setFields(prev=>({...prev,[header]:value}));}
-  const money=meta?employeeMoneyDefaults(meta.settings,fields["แผนก"],fields["กะทำงาน"]):{};
+  const money=meta?employeeMoneyDefaults(meta.settings,fields.Section,fields["กะทำงาน"]):{};
   async function save(e:React.FormEvent) {
     e.preventDefault();if(!meta||busy)return;setBusy(true);setError("");
     try {
@@ -31,7 +31,7 @@ export default function EmployeeCreateForm({onCreated}:{onCreated:()=>void}) {
       await refresh().catch(()=>setToast("เพิ่มพนักงานแล้ว กรุณารีเฟรชหน้าจอ"));
     }catch(e){setError(e instanceof Error?e.message:"บันทึกไม่สำเร็จ");}finally{setBusy(false);}
   }
-  const required=["รหัส","ชื่อ-นามสกุล","แผนก","คลัง","กะทำงาน","Sup","First Time","Last Time"];
+  const required=["รหัส","ชื่อ-นามสกุล","แผนก","Section","กะทำงาน","Sup","First Time","Last Time"];
   function field(header:string) {
     const label=t(header)+(required.includes(header)?" *":"");
     const props={value:fields[header],disabled:busy,required:required.includes(header),onChange:(e:React.ChangeEvent<HTMLInputElement|HTMLSelectElement>)=>change(header,e.target.value)};
@@ -41,7 +41,7 @@ export default function EmployeeCreateForm({onCreated}:{onCreated:()=>void}) {
       const options=meta?.options[header]||[];
       return <label key={header}>{label}{options.length?<select {...props}><option value="">{t("เลือกข้อมูล")}</option>{options.map(v=><option key={v}>{v}</option>)}</select>:<input {...props} maxLength={200} placeholder={t("ยังไม่มีตัวเลือก กรุณากรอกข้อมูล")}/>}</label>;
     }
-    return <label key={header}>{label}<input {...props} type={["First Time","Last Time"].includes(header)?"time":["เริ่มงาน","End "].includes(header)?"date":"text"} maxLength={header==="รหัส"?64:200} pattern={header==="รหัส"?"[A-Za-z0-9_-]{1,64}":undefined}/></label>;
+    return <label key={header}>{label}<input {...props} type={["First Time","Last Time"].includes(header)?"time":["เริ่มงาน","วันที่ออก"].includes(header)?"date":"text"} maxLength={header==="รหัส"?64:200} pattern={header==="รหัส"?"[A-Za-z0-9_-]{1,64}":undefined}/></label>;
   }
   return <details className="panel employee-tools" onToggle={e=>{if(e.currentTarget.open&&!meta&&!loading)void load();}}>
     <summary><span className="employee-tool-icon"><UserPlus size={21}/></span><span>{t("เพิ่มพนักงาน")}</span><ChevronDown size={18} className="employee-tool-chevron"/></summary>

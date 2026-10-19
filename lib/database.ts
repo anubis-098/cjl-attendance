@@ -8,6 +8,8 @@ import {
   scheduledScanDate,
 } from "./shift-overrides";
 import { normalizeDepartment } from "./departments";
+import { normalizeDayCode } from "./day-codes";
+import { isWeeklyHoliday } from "./master-calendar";
 
 const globalDB = globalThis as unknown as {
   employeePool?: Pool;
@@ -44,6 +46,7 @@ export async function readWorkspace(transaction?: PoolClient) {
           ...employee.shift_data,
           source_department:
             employee.shift_data.source_department ||
+            employee.source_data.Section ||
             employee.source_data["แผนก"] ||
             employee.shift_data.department,
           department: normalizeDepartment(employee.shift_data.department),
@@ -106,11 +109,51 @@ export async function readWorkspace(transaction?: PoolClient) {
           source_day_code: "MASTER",
         });
       }
-      data.shifts.sort(
-        (a, b) =>
-          a.date.localeCompare(b.date) || a.emp_id.localeCompare(b.emp_id),
-      );
     }
+    const observedDates = data.shifts.map((shift) => shift.date).sort();
+    if (observedDates.length) {
+      const firstDate = observedDates[0];
+      const lastDate = observedDates.at(-1)!;
+      const scheduledKeys = new Set(data.shifts.map((shift) => `${shift.emp_id}|${shift.date}`));
+      const dateRange: string[] = [];
+      for (let date = firstDate; date <= lastDate; ) {
+        dateRange.push(date);
+        const next = new Date(`${date}T00:00:00Z`);
+        next.setUTCDate(next.getUTCDate() + 1);
+        date = next.toISOString().slice(0, 10);
+      }
+      for (const employee of employees) {
+        const plan = employee.shift_data;
+        const weeklyHoliday = employee.source_data?.["วันหยุด"];
+        if (!plan || !weeklyHoliday) continue;
+        const startDate = employee.source_data?.["เริ่มงาน"] || firstDate;
+        const endDate = employee.source_data?.["วันที่ออก"] || lastDate;
+        for (const date of dateRange) {
+          const key = `${employee.employee_id}|${date}`;
+          if (
+            date < startDate ||
+            date > endDate ||
+            scheduledKeys.has(key) ||
+            !isWeeklyHoliday(weeklyHoliday, date)
+          ) continue;
+          data.shifts.push({
+            ...plan,
+            date,
+            shift_code: "H",
+            base_shift_code: plan.shift_code,
+            requested_ot_hrs: 0,
+            requested_ot_known: false,
+            ot_task_target: "",
+            source_day_code: "MASTER_WEEKLY",
+          });
+          scheduledKeys.add(key);
+        }
+      }
+    }
+    data.shifts.sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) || a.emp_id.localeCompare(b.emp_id),
+    );
     const { rows: holidays } = await c.query<{
       employee_id: string;
       date: string;
@@ -118,10 +161,18 @@ export async function readWorkspace(transaction?: PoolClient) {
     }>(
       "SELECT employee_id,to_char(holiday_date,'YYYY-MM-DD') AS date,holiday_code FROM employee_holidays ORDER BY holiday_date,employee_id",
     );
+    const employeeById = new Map(employees.map((employee) => [employee.employee_id, employee]));
     const shiftMap = new Map(
       data.shifts.map((s) => [
         s.emp_id + "|" + s.date,
-        applyShiftOverride(s, data.shiftOverrides?.[s.emp_id + "|" + s.date]),
+        (() => {
+          const base = applyShiftOverride(s, data.shiftOverrides?.[s.emp_id + "|" + s.date]);
+          const weeklyHoliday = employeeById.get(s.emp_id)?.source_data?.["วันหยุด"];
+          const regularCode = ["1", "M", "D", "A", "N"].includes(normalizeDayCode(base.shift_code));
+          return isWeeklyHoliday(weeklyHoliday, s.date) && regularCode
+            ? { ...base, shift_code: "H", base_shift_code: base.base_shift_code || base.shift_code }
+            : base;
+        })(),
       ]),
     );
     for (const key of new Set([...Object.keys(data.shiftOverrides || {}),
@@ -195,6 +246,25 @@ export async function readWorkspace(transaction?: PoolClient) {
       department: normalizeDepartment(s.department),
       base_shift_code: s.base_shift_code || masters.get(s.emp_id)?.shift_code,
     }));
+    data.employeeWeeklyHolidays = Object.fromEntries(
+      employees
+        .map((employee) => [employee.employee_id, employee.source_data?.["วันหยุด"]?.trim() || ""] as const)
+        .filter(([, day]) => day),
+    );
+    data.employeeEndDates = Object.fromEntries(
+      employees
+        .map((employee) => [employee.employee_id, employee.source_data?.["วันที่ออก"]?.trim() || ""] as const)
+        .filter(([, date]) => /^\d{4}-\d{2}-\d{2}$/.test(date)),
+    );
+    data.employeesResignedWithoutDate = employees
+      .filter((employee) => {
+        const status = (employee.source_data?.Status || "").trim().toLowerCase();
+        const contract = (employee.source_data?.Contract || "").trim().toLowerCase();
+        const resigned = ["resign", "resigned"].includes(status) || contract === "resigned";
+        const hasDate = /^\d{4}-\d{2}-\d{2}$/.test(employee.source_data?.["วันที่ออก"] || "");
+        return resigned && !hasDate;
+      })
+      .map((employee) => employee.employee_id);
     if(!transaction) await c.query("COMMIT");
     return {
       data,

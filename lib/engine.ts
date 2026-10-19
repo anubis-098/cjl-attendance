@@ -51,6 +51,9 @@ export type Data = {
   employeePayrollSettings?: Record<string, Record<string, { dailyWage: number }>>;
   calendarRemarks?: { date: string; employeeId: string; text: string }[];
   companyHolidays?: string[];
+  employeeWeeklyHolidays?: Record<string, string>;
+  employeeEndDates?: Record<string, string>;
+  employeesResignedWithoutDate?: string[];
   shiftOverrides?: Record<string, import("./shift-overrides").ShiftOverride>;
   payrollSettings?: Record<
     string,

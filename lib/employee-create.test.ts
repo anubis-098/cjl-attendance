@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createEmployeeRow, employeeMoneyDefaults } from "./employee-create";
 import { DEFAULT_PAYROLL_SETTINGS } from "./payroll-settings";
-const fields={"รหัส":"BE123456","ชื่อ-นามสกุล":"Test Employee","แผนก":"Frozen CDC","คลัง":"CDC","กะทำงาน":"N","First Time":"20:00","Last Time":"05:00","Sup":"Agency","เริ่มงาน":"2026-10-12"};
+const fields={"รหัส":"BE123456","ชื่อ-นามสกุล":"Test Employee","แผนก":"CDC Fresh Food Operation",Section:"Frozen CDC","กะทำงาน":"N","First Time":"20:00","Last Time":"05:00","Sup":"Agency","เริ่มงาน":"2026-10-12"};
 test("creates a valid overnight master record with canonical department and payroll defaults",()=>{
   const row=createEmployeeRow(fields,4,DEFAULT_PAYROLL_SETTINGS);
   assert.equal(row.source_data["ลำดับ"],"4");
@@ -23,5 +23,5 @@ test("uses configured current rates, does not trust money fields submitted by cl
   assert.equal(employeeMoneyDefaults(settings,"Dry","M")["FF Allowance"],"0.00");
 });
 test("rejects missing identity, malformed times and invalid employment dates",()=>{
-  for(const patch of [{"รหัส":""},{"รหัส":"A|2026-10-12"},{"ชื่อ-นามสกุล":""},{"First Time":"25:00"},{"Last Time":"20:00"},{"เริ่มงาน":"2026-02-30"},{"End ":"2026-01-01"}]) assert.throws(()=>createEmployeeRow({...fields,...patch},1,DEFAULT_PAYROLL_SETTINGS));
+  for(const patch of [{"รหัส":""},{"รหัส":"A|2026-10-12"},{"ชื่อ-นามสกุล":""},{"First Time":"25:00"},{"Last Time":"20:00"},{"เริ่มงาน":"2026-02-30"},{"วันที่ออก":"2026-01-01"}]) assert.throws(()=>createEmployeeRow({...fields,...patch},1,DEFAULT_PAYROLL_SETTINGS));
 });

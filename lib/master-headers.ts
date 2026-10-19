@@ -6,11 +6,13 @@ const aliases: Record<string, string[]> = {
   "รหัส": ["รหัสพนักงาน", "Employee ID", "emp_id"],
   "ชื่อ-นามสกุล": ["ชื่อพนักงาน", "ชื่อ นามสกุล", "Employee Name", "emp_name"],
   "แผนก": ["Department"],
-  "คลัง": ["Warehouse"],
+  Section: ["section"],
   "กะทำงาน": ["กะ", "Shift", "shift_code"],
   "เวลาทำงาน": ["เวลากะ", "Working Time"],
   "First Time": ["เวลาเข้างาน", "เวลาเริ่มกะ", "shift_start", "Start Time"],
   "Last Time": ["เวลาเลิกงาน", "เวลาจบกะ", "shift_end", "End Time"],
+  Status: ["Employment Status"],
+  "วันที่ออก": ["End", "End Date", "Resign Date", "Termination Date"],
   "Sup": ["บริษัท", "Agency", "Supplier"],
 };
 
