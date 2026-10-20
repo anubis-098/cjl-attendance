@@ -193,10 +193,15 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
     !review?.outTime;
   const hasAttendanceEvidence =
     logs.length > 0 || !!review?.inTime || !!review?.outTime;
-  const absent = !off && !nonWorking && !hasAttendanceEvidence;
+  const intentionallyExcludedScan = (review?.ignoredScans?.length || 0) > 0;
+  const missingEndpoint = inMs === undefined || outMs === undefined;
+  const absent =
+    !off &&
+    !nonWorking &&
+    (!hasAttendanceEvidence || (intentionallyExcludedScan && missingEndpoint));
   const missing =
     !off && !nonWorking && hasAttendanceEvidence &&
-    (inMs === undefined || outMs === undefined);
+    !intentionallyExcludedScan && missingEndpoint;
   const late =
     !off && !nonWorking && inMs !== undefined && inMs > start + 300000;
   const period = !off && !missing && !nonWorking && !absent
