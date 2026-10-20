@@ -145,10 +145,14 @@ export function migrateCalculation(data: Data): Data {
   };
 }
 export const keyOf = (s: Shift) => `${s.emp_id}|${s.date}`;
-export function manualPairScansByEmployee(reviews: Record<string, Review>) {
+export function savedPairScansByEmployee(reviews: Record<string, Review>) {
   const byEmployee = new Map<string, Set<number>>();
   for (const [key, review] of Object.entries(reviews)) {
-    if (!review.manualPair) continue;
+    // Saved complete endpoints also come from the review drawer and bulk
+    // confirmation. They need the same ownership as drag-and-drop pairs.
+    if (!review.inTime || !review.outTime) continue;
+    const start = punchTime(review.inTime), end = punchTime(review.outTime);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
     const employeeId = key.slice(0, key.lastIndexOf("|"));
     const scans = byEmployee.get(employeeId) || new Set<number>();
     for (const time of [review.inTime, review.outTime])
@@ -168,7 +172,7 @@ export function reconcile(
   s: Shift,
   punches: Punch[],
   review?: Review,
-  manuallyPairedScans: ReadonlySet<number> = new Set(),
+  savedPairScans: ReadonlySet<number> = new Set(),
 ) {
   const code = normalizeDayCode(s.shift_code);
   const nonWorking = nonWorkingCodes.has(code);
@@ -180,7 +184,7 @@ export function reconcile(
       ...p,
       ms: punchTime(p.punch_timestamp),
     }))
-    .filter((p) => !ignoredScans.has(p.ms) && !manuallyPairedScans.has(p.ms))
+    .filter((p) => !ignoredScans.has(p.ms) && !savedPairScans.has(p.ms))
     .sort((a, b) => a.ms - b.ms);
   const logs = allLogs.filter(
     (p) =>
@@ -210,15 +214,13 @@ export function reconcile(
     !review?.outTime;
   const hasAttendanceEvidence =
     logs.length > 0 || !!review?.inTime || !!review?.outTime;
-  const intentionallyExcludedScan = (review?.ignoredScans?.length || 0) > 0;
   const missingEndpoint = inMs === undefined || outMs === undefined;
   const absent =
     !off &&
     !nonWorking &&
-    (!hasAttendanceEvidence || (intentionallyExcludedScan && missingEndpoint));
+    !hasAttendanceEvidence;
   const missing =
-    !off && !nonWorking && hasAttendanceEvidence &&
-    !intentionallyExcludedScan && missingEndpoint;
+    !off && !nonWorking && hasAttendanceEvidence && missingEndpoint;
   const late =
     !off && !nonWorking && inMs !== undefined && inMs > start + 300000;
   const period = !off && !missing && !nonWorking && !absent

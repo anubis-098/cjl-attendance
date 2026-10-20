@@ -1,7 +1,7 @@
 import { guard, currentSession } from "@/lib/auth";
 import { visibleWorkspace } from "@/lib/permissions";
 import { readWorkspace, updateEmployeeStore } from "@/lib/database";
-import { keyOf, manualPairScansByEmployee, reconcile, Review } from "@/lib/engine";
+import { keyOf, savedPairScansByEmployee, reconcile, Review } from "@/lib/engine";
 import { punchTime } from "@/lib/shift-window";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,7 +38,7 @@ export async function PUT(request: Request) {
     )
       throw Error("รูปแบบข้อมูลตรวจสอบไม่ถูกต้อง");
     const shifts = new Map(current.data.shifts.map((s) => [keyOf(s), s]));
-    const manuallyPairedScans = manualPairScansByEmployee(current.data.reviews);
+    const savedPairScans = savedPairScansByEmployee(current.data.reviews);
     const punches = new Map<string, typeof current.data.punches>();
     for (const p of current.data.punches) {
       const list = punches.get(p.device_emp_id) || [];
@@ -77,7 +77,7 @@ export async function PUT(request: Request) {
           throw Error("เวลาไม่ถูกต้อง");
       if (review.inTime && review.outTime && review.outTime <= review.inTime)
         throw Error("เวลาออกต้องหลังเวลาเข้า");
-      const r = reconcile(s, punches.get(s.device_emp_id) || [], review, manuallyPairedScans.get(s.emp_id));
+      const r = reconcile(s, punches.get(s.device_emp_id) || [], review, savedPairScans.get(s.emp_id));
       if (
         review.approved &&
         !(

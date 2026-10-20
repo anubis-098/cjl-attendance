@@ -151,6 +151,36 @@ test("manually paired overnight punches are not reused as the next master shift'
   const report = calculatePayroll(data, "2026-10", "calendar", undefined, DEFAULT_PAYROLL_SETTINGS);
   assert.equal(report.rows[0].missing, 0);
   assert.equal(report.rows[0].days.find((day) => day.date === "2026-10-04")?.status, "ABSENT");
+  // Production saves reviewed endpoints without the manualPair flag.
+  delete data.reviews["BE000028|2026-10-03"].manualPair;
+  data.reviews["BE000028|2026-10-03"].approved = true;
+  data.reviews["BE000028|2026-10-03"].otRulesVersion = 6;
+  data.shifts[0] = { ...data.shifts[0], shift_start: "19:00", shift_end: "04:00",
+    shift_code: "A", scan_window_from: 1790980200000, scan_window_to: 1791066600000 };
+  data.shifts[1] = { ...data.shifts[1], scan_window_from: 1791066600000, scan_window_to: 1791131400000 };
+  const reviewed = calculatePayroll(data, "2026-10", "26-25", undefined, DEFAULT_PAYROLL_SETTINGS).rows[0];
+  assert.equal(reviewed.missing, 0);
+  assert.equal(reviewed.workedDays, 1);
+  assert.equal(reviewed.days[0].approved, true);
+  assert.equal(reviewed.approvedHours["1.5"], 2);
+  // Other employees' identical scan times remain independent.
+  data.shifts.push({ ...data.shifts[1], emp_id: "OTHER", device_emp_id: "OTHER" });
+  data.punches.push({ device_emp_id: "OTHER", punch_timestamp: "2026-10-04 06:02:00", punch_type: "UNKNOWN" });
+  assert.equal(calculatePayroll(data, "2026-10", "calendar").rows.find((r) => r.id === "OTHER")?.missing, 1);
+  // A genuine additional orphan is still flagged, and every export preset
+  // carries its date and warning rather than manufacturing payable hours.
+  data.punches.push({ device_emp_id: "BE000028", punch_timestamp: "2026-10-04 08:00:00", punch_type: "UNKNOWN" });
+  const incomplete = calculatePayroll(data, "2026-10", "calendar", undefined, DEFAULT_PAYROLL_SETTINGS);
+  const affected = incomplete.rows.find((r) => r.id === "BE000028")!;
+  assert.equal(affected.missing, 1);
+  assert.equal(affected.workedDays, 1);
+  assert.equal(affected.days.find((d) => d.date === "2026-10-04")?.worked, false);
+  for (const preset of ["approved", "pending", "all"] as const) {
+    const csv = buildPayrollExport({ ...incomplete, rows: [affected] }, exportPreset(preset), true);
+    assert.equal(csv[1][csv[0].indexOf("Incomplete Scan Dates")], "2026-10-04");
+    assert.equal(csv[0].filter((header) => header === "Incomplete Scan Shifts").length, 1);
+    assert.match(csv[1][csv[0].indexOf("Attendance Calculation Warning")], /excluded/);
+  }
 });
 
 test("payroll export separates confirmed and pending amounts, selects columns and keeps incomplete totals unknown", () => {

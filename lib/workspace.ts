@@ -1,4 +1,4 @@
-import { Audit, Shift, Data, manualPairScansByEmployee, reconcile, OT_RULES_VERSION } from "./engine";
+import { Audit, Shift, Data, savedPairScansByEmployee, reconcile, OT_RULES_VERSION } from "./engine";
 import { createUUID } from "./uuid";
 export const number = (n: number) =>
   n.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -78,7 +78,7 @@ export const canApprove = (r: ReturnType<typeof reconcile>) =>
 export function approveShifts(data: Data, shifts: Shift[]): Data {
   const reviews = { ...data.reviews },
     logs: Audit[] = [];
-  const manuallyPairedScans = manualPairScansByEmployee(data.reviews);
+  const savedPairScans = savedPairScansByEmployee(data.reviews);
   const punchesByEmployee = new Map<string, typeof data.punches>();
   for (const punch of data.punches) {
     const rows = punchesByEmployee.get(punch.device_emp_id) || [];
@@ -90,7 +90,7 @@ export function approveShifts(data: Data, shifts: Shift[]): Data {
       before = reviews[key];
     if (
       !canApprove(
-        reconcile(s, punchesByEmployee.get(s.device_emp_id) || [], before, manuallyPairedScans.get(s.emp_id)),
+        reconcile(s, punchesByEmployee.get(s.device_emp_id) || [], before, savedPairScans.get(s.emp_id)),
       )
     )
       continue;

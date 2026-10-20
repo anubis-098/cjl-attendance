@@ -119,9 +119,9 @@ export default function PayrollExportModal({
           </p>
           {incompleteRows.length > 0 && (
             <div className="payroll-export-warning" role="alert">
-              <strong>{t("ส่งออกไม่ได้: พบพนักงานสแกนไม่ครบ")}</strong>
+              <strong>{t("ส่งออกได้ แต่พบรายการสแกนไม่ครบ")}</strong>
               <span>
-                {t("กรุณาตรวจสอบรายการสแกนไม่ครบก่อนส่งออก")}{" "}
+                {t("ยอดเงินยังไม่สมบูรณ์: ไม่คำนวณค่าจ้างตามวันทำงาน OT และเบี้ยเลี้ยงจากกะที่สแกนไม่ครบ โดยระบุวันที่ไว้ใน CSV")}{" "}
                 {incompleteRows
                   .slice(0, 5)
                   .map((row) => {
@@ -269,8 +269,7 @@ export default function PayrollExportModal({
             className="button primary"
             disabled={
               !selected.length ||
-              !report.rows.length ||
-              incompleteRows.length > 0
+              !report.rows.length
             }
             onClick={() => {
               downloadCSV(filename, csv);

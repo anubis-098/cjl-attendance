@@ -174,10 +174,23 @@ export function buildPayrollExport(
           .map(([code, n]) => `${code}: ${n}`)
           .join("; "),
     });
-    add("Incomplete Scan Shifts", (r) => r.missing);
     columns.push({
       label: "Notes",
       value: (r) => r.rate?.warnings.join("; ") || "",
+    });
+  }
+  if (selected.includes("notes") || report.rows.some((r) => r.missing > 0)) {
+    add("Incomplete Scan Shifts", (r) => r.missing);
+    columns.push({
+      label: "Incomplete Scan Dates",
+      value: (r) => [...new Set(r.days
+        .filter((day) => day.missing ?? day.status === "MISSING")
+        .map((day) => day.date))].join("; "),
+    }, {
+      label: "Attendance Calculation Warning",
+      value: (r) => r.missing > 0
+        ? "Incomplete attendance: attendance-based wages, OT and allowances for incomplete shifts are excluded; review listed dates."
+        : "",
     });
   }
   if (selected.includes("leave")) {

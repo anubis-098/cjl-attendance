@@ -1,5 +1,5 @@
 "use client";
-import { keyOf, manualPairScansByEmployee, reconcile, Shift, isoLocal } from "@/lib/engine";
+import { keyOf, savedPairScansByEmployee, reconcile, Shift, isoLocal } from "@/lib/engine";
 import { addDays } from "@/lib/workspace";
 import { useMemo } from "react";
 import { useWorkspace } from "./provider";
@@ -13,8 +13,8 @@ export function useAttendance() {
     () => buildActualTimeline(data.shifts, punchesByEmployee, data.reviews),
     [data.shifts, punchesByEmployee, data.reviews],
   );
-  const manuallyPairedScans = useMemo(
-    () => manualPairScansByEmployee(data.reviews),
+  const savedPairScans = useMemo(
+    () => savedPairScansByEmployee(data.reviews),
     [data.reviews],
   );
   const computed = useMemo(() => {
@@ -46,7 +46,7 @@ export function useAttendance() {
           s,
           punchesByEmployee.get(s.device_emp_id) || [],
           data.reviews[keyOf(s)],
-          manuallyPairedScans.get(s.emp_id),
+          savedPairScans.get(s.emp_id),
         ),
       ]),
     );
@@ -103,7 +103,7 @@ export function useAttendance() {
       employees: [...employees.values()],
       totals: { normal, ot, requested, pending, issues },
     };
-  }, [data.shifts, data.reviews, filters, punchesByEmployee, actualTimeline, globalEmployeeSearch, manuallyPairedScans]);
+  }, [data.shifts, data.reviews, filters, punchesByEmployee, actualTimeline, globalEmployeeSearch, savedPairScans]);
   return { ...workspace, ...computed, actualTimeline };
 }
 export type AttendanceData = ReturnType<typeof useAttendance>;

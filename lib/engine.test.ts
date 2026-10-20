@@ -606,9 +606,16 @@ test("outside matching window and other employee punches are excluded", () => {
     note: "",
     ignoredScans: [Date.parse("2026-09-14T06:12:00+07:00")],
   });
-  assert.equal(manuallyExcluded.missing, false);
-  assert.equal(manuallyExcluded.absent, true);
-  assert.equal(manuallyExcluded.status, "ABSENT");
+  // Hiding one scan must not silently discard another unresolved scan.
+  assert.equal(manuallyExcluded.missing, true);
+  assert.equal(manuallyExcluded.absent, false);
+  assert.equal(manuallyExcluded.status, "MISSING");
+  const onlyExcluded = reconcile(shift, [disabledEntry[0]], {
+    approved: false, overBudget: false, note: "",
+    ignoredScans: [Date.parse("2026-09-14T06:12:00+07:00")],
+  });
+  assert.equal(onlyExcluded.missing, false);
+  assert.equal(onlyExcluded.absent, true);
 });
 test("unknown punch cannot act as both entry and exit", () => {
   const r = reconcile(shift, [

@@ -1026,4 +1026,6 @@ export const thai: Record<string, string> = {
   "Add employee details with Edit profile": "กดแก้ไขข้อมูลเพื่อเพิ่มรายละเอียดพนักงาน",
   "Uploading photo": "กำลังอัปโหลดรูป",
   "Save changes": "บันทึกการเปลี่ยนแปลง",
+  "Export available with incomplete scans": "ส่งออกได้ แต่พบรายการสแกนไม่ครบ",
+  "Totals are incomplete: attendance-based wages, OT and allowances from incomplete shifts are excluded. Dates are included in the CSV.": "ยอดเงินยังไม่สมบูรณ์: ไม่คำนวณค่าจ้างตามวันทำงาน OT และเบี้ยเลี้ยงจากกะที่สแกนไม่ครบ โดยระบุวันที่ไว้ใน CSV",
 };

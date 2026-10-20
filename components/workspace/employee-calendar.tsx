@@ -17,7 +17,7 @@ import {
   isoLocal,
   keyOf,
   reconcile,
-  manualPairScansByEmployee,
+  savedPairScansByEmployee,
   type Shift,
 } from "@/lib/engine";
 import { normalizeDayCode } from "@/lib/day-codes";
@@ -143,8 +143,8 @@ export default function EmployeeCalendar({
     () => buildActualTimeline(employeeShifts, punchesByEmployee, data.reviews),
     [employeeShifts, punchesByEmployee, data.reviews],
   );
-  const manuallyPairedScans = useMemo(
-    () => manualPairScansByEmployee(data.reviews),
+  const savedPairScans = useMemo(
+    () => savedPairScansByEmployee(data.reviews),
     [data.reviews],
   );
   const candidates = useMemo(
@@ -165,11 +165,11 @@ export default function EmployeeCalendar({
             s,
             punchesByEmployee.get(s.device_emp_id) || [],
             data.reviews[keyOf(s)],
-            manuallyPairedScans.get(s.emp_id),
+            savedPairScans.get(s.emp_id),
           ),
         ]),
       ),
-    [candidates, punchesByEmployee, data.reviews, manuallyPairedScans],
+    [candidates, punchesByEmployee, data.reviews, savedPairScans],
   );
   const shiftsByDate = new Map(candidates.map((s) => [s.date, s]));
   const monthly = candidates
