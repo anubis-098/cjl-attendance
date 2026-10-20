@@ -21,17 +21,22 @@ export function workTime(inMs: number, outMs: number, deductOTBreak = false, pla
   const normalHours = Math.min(8, Math.max(0, (Math.min(outMs, plan?.end ?? outMs) - Math.max(calculationStart, plan?.start ?? calculationStart)) / HOUR - 1));
   const grossOvertime = Math.max(0, (outMs - Math.max(overtimeStart, calculationStart)) / HOUR);
   const grossAfterShiftOT = floorOT(grossOvertime);
-  const canDeductOTBreak = grossAfterShiftOT > 3;
-  const otBreakHours = deductOTBreak && canDeductOTBreak ? 0.5 : 0;
+  // The 30-minute deduction is an explicit per-shift choice; it is not gated
+  // by an overtime-hours threshold. Apply it to post-shift OT first, then
+  // pre-shift OT when there is no post-shift OT to deduct it from.
+  const canDeductOTBreak = true;
+  const otBreakHours = deductOTBreak && beforeShiftOT + grossAfterShiftOT > 0 ? 0.5 : 0;
+  const afterShiftOT = floorOT(grossOvertime - (otBreakHours && grossAfterShiftOT > 0 ? 0.5 : 0));
+  const adjustedBeforeShiftOT = floorOT(beforeShiftOT - (otBreakHours && grossAfterShiftOT === 0 ? 0.5 : 0));
   return {
     calculationStart,
     overtimeStart,
     normalHours,
-    beforeShiftOT,
+    beforeShiftOT: adjustedBeforeShiftOT,
     grossAfterShiftOT,
     canDeductOTBreak,
     otBreakHours,
-    afterShiftOT: floorOT(grossOvertime - otBreakHours),
-    overtimeHours: beforeShiftOT + floorOT(grossOvertime - otBreakHours),
+    afterShiftOT,
+    overtimeHours: adjustedBeforeShiftOT + afterShiftOT,
   };
 }

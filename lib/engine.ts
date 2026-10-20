@@ -205,7 +205,8 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
   const grossAfterShiftOT = ratePending ? 0 : period?.grossAfterShiftOT ?? 0;
   const canDeductOTBreak = !ratePending && !!period?.canDeductOTBreak;
   const otBreakHours = ratePending ? 0 : period?.otBreakHours ?? 0;
-  // Keep pre-shift and post-shift OT separate; breaks apply only after shift.
+  // Keep pre-shift and post-shift OT separate; an optional break reduces
+  // post-shift OT first, then pre-shift OT if needed.
   const beforeShiftOT = ratePending ? 0 : period?.beforeShiftOT ?? 0;
   const afterShiftOT = ratePending ? 0 : period?.afterShiftOT ?? 0;
   const normal =

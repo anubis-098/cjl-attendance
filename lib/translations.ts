@@ -80,7 +80,7 @@ Service OT|OT Service
 วันที่เลือก|Selected dates
 นับคนไม่ซ้ำจากสแกนจริง ไม่ขึ้นกับจำนวนครั้งที่สแกน|Unique employees with recorded scans, regardless of scan count
 เวลาเข้า: นาที 01–20 ปัดลง หลังนาที 20 ปัดขึ้น · งาน 8 ชม. + พัก 1 ชม. แล้วนับ OT · OT ขั้นต่ำ 1 ชม. ปัดลงทุก 30 นาที · H/H8: 8 ชม. แรก x2.0 ส่วนเกิน x3.0 · PH/PH8: 8 ชม. แรก x1.0 ส่วนเกิน x3.0 · เบี้ยเลี้ยงเฉพาะวันทำงานปกติ · ไม่รวมภาษีหรือหักเงิน|Entry: minutes 01–20 round down; after minute 20 round up. OT starts after 8 work hours + 1-hour break. Minimum OT: 1 hour, rounded down to half hours. H/H8: first 8 hours x2.0, extra x3.0. PH/PH8: first 8 hours x1.0, extra x3.0. Allowances on regular workdays only. Before tax and deductions.
-เลือกได้เมื่อ OT x1.5 / x3.0 ก่อนหักพักเกิน 3.0 ชม.|Available when gross x1.5 / x3.0 OT exceeds 3 hours.
+เลือกหักได้ตามต้องการ หักจาก OT หลังเลิกกะก่อน หรือ OT ก่อนกะหากไม่มี OT หลังเลิกกะ|Optional deduction; taken from post-shift OT first, or pre-shift OT if none is available after the shift.
 OT ก่อนหักพัก |Gross OT 
 OT สุทธิ |Net OT 
 ปฏิทิน Actual: แสดงเวลาสแกนจริง · ฟ้า = งานปกติ · เหลือง = มี OT · แดง = สแกนไม่ครบ/กำกวม|Actual calendar: recorded times · Blue = regular work · Yellow = OT · Red = incomplete/ambiguous scans
@@ -628,7 +628,7 @@ OT สูงเกินเป้า · x1.5 + x3.0 รวม|High OT · x1.5 + 
 OT ก่อนกะ|Pre-shift OT
 ชม. · ไม่มีการหักพัก|hrs · No break deduction
 หักพัก OT 30 นาที|Deduct 30-minute OT break
-เลือกได้เมื่อ OT หลังเลิกกะ x1.5 / x3.0 ก่อนหักพักเกิน 3.0 ชม.|Available when pre-deduction post-shift OT at x1.5 / x3.0 exceeds 3.0 hours.
+เลือกหักได้ตามต้องการ หักจาก OT หลังเลิกกะก่อน หรือ OT ก่อนกะหากไม่มี OT หลังเลิกกะ|Optional deduction; taken from post-shift OT first, or pre-shift OT if none is available after the shift.
 OT หลังเลิกกะก่อนหักพัก|Post-shift OT before break
 หักพัก|Break deduction
 OT หลังกะสุทธิ|Net post-shift OT

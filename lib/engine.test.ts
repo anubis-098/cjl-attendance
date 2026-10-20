@@ -98,7 +98,7 @@ test("BE000609 early entry stays with September 3 without stealing the next even
   assert.equal(r.beforeShiftOT, 3);
   assert.equal(r.afterShiftOT, 0);
   assert.equal(r.rawOT["1.5"], 3);
-  assert.equal(r.canDeductOTBreak, false);
+  assert.equal(r.canDeductOTBreak, true);
   assert.equal(reconcile({ ...s, date: "2026-09-02" }, p).logs.length, 0);
   const next = reconcile({ ...s, date: "2026-09-04" }, p);
   assert.equal(next.inMs, Date.parse("2026-09-04T16:47:00+07:00"));
@@ -145,9 +145,9 @@ test("BE001030 six-to-fifteen plan splits pre/post OT without shifting the plann
   assert.equal(sunday.beforeShiftOT, 0);
   assert.equal(sunday.afterShiftOT, 3);
   const earlyOnly = reconcile(s, punches("2026-09-14 02:00:00", "2026-09-14 15:00:00"), { approved: false, overBudget: false, note: "", deductOTBreak: true });
-  assert.equal(earlyOnly.beforeShiftOT, 4);
+  assert.equal(earlyOnly.beforeShiftOT, 3.5);
   assert.equal(earlyOnly.afterShiftOT, 0);
-  assert.equal(earlyOnly.otBreakHours, 0);
+  assert.equal(earlyOnly.otBreakHours, 0.5);
 });
 test("changed historical approvals require confirmation under the new OT rules", () => {
   const p = punches("2026-09-14 05:00:00", "2026-09-14 17:00:00");
@@ -179,7 +179,7 @@ test("changed historical approvals require confirmation under the new OT rules",
     true,
   );
 });
-test("optional OT break requires more than three credited post-shift hours", () => {
+test("optional OT break can be used at any post-shift OT amount", () => {
   const review = {
     approved: false,
     overBudget: false,
@@ -187,8 +187,8 @@ test("optional OT break requires more than three credited post-shift hours", () 
     deductOTBreak: true,
   };
   for (const [end, gross, net] of [
-    ["20:00", 3, 3],
-    ["20:29", 3, 3],
+    ["20:00", 3, 2.5],
+    ["20:29", 3, 2.5],
     ["20:30", 3.5, 3],
     ["21:10", 4, 3.5],
   ] as const) {
@@ -198,7 +198,7 @@ test("optional OT break requires more than three credited post-shift hours", () 
       const r = reconcile(s, p, review);
       assert.equal(r.grossAfterShiftOT, gross);
       assert.equal(r.monitoredOT, net);
-      assert.equal(r.otBreakHours, gross > 3 ? 0.5 : 0);
+      assert.equal(r.otBreakHours, 0.5);
       assert.equal(reconcile(s, p).monitoredOT, gross);
       if (code === "PH8") assert.equal(r.rawOT["1.0"], 8);
       assert.equal(r.outMs, reconcile(s, p).outMs);
