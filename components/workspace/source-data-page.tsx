@@ -23,7 +23,7 @@ export default function SourceDataPage({
   kind: "employees" | "fingerprints";
 }) {
   const { t, getLocale } = useTranslation();
-  const { refresh, setToast, setFilters } = useWorkspace();
+  const { refresh, setToast, setFilters, globalEmployeeSearch, setGlobalEmployeeSearch } = useWorkspace();
   const [rows, setRows] = useState<(EmployeeRow | ScanRow)[]>([]),
     [total, setTotal] = useState(0),
     [page, setPage] = useState(1),
@@ -50,6 +50,7 @@ export default function SourceDataPage({
   >({});
   const [options, setOptions] = useState<Record<string, string[]>>({});
   function changeFilter(key: string, value: string) {
+    setGlobalEmployeeSearch("");
     setEmployeeFilters((previous) => {
       const next = { ...previous };
       if (value === "") delete next[key];
@@ -58,13 +59,14 @@ export default function SourceDataPage({
     });
     setPage(1);
   }
+  useEffect(() => { setPage(1); }, [globalEmployeeSearch]);
   useEffect(() => {
     const ctrl = new AbortController();
     setLoading(true);
     const query = new URLSearchParams({
       type: kind,
       page: String(page),
-      search,
+      search: globalEmployeeSearch.trim() || search,
     });
     if (master) {
       for (const [key, value] of Object.entries(employeeFilters)) {
@@ -90,7 +92,7 @@ export default function SourceDataPage({
         if (!ctrl.signal.aborted) setLoading(false);
       });
     return () => ctrl.abort();
-  }, [kind, master, page, search, version, employeeFilters]);
+  }, [kind, master, page, search, globalEmployeeSearch, version, employeeFilters]);
   async function upload(selected: File, previewOnly = false) {
     setBusy(true);
     setError("");
@@ -183,7 +185,7 @@ export default function SourceDataPage({
               onChange={(e) => setEmployeeMode(e.target.value)}
             >
               <option value="merge">{t("เพิ่ม/อัปเดตข้อมูล")}</option>
-              <option value="replace">{t("แทนที่ข้อมูลทั้งหมด")}</option>
+              <option value="replace">{t("แทนที่รายชื่อพนักงาน")}</option>
             </select>
           </label>
         )}
@@ -191,8 +193,8 @@ export default function SourceDataPage({
           {t(
             master
               ? employeeMode === "merge"
-                ? "เพิ่มรหัสใหม่และอัปเดตข้อมูลของรหัสที่มีอยู่ตามไฟล์ เก็บพนักงานที่ไม่มีในไฟล์และตารางกะรายวันเดิมไว้ เปิดผลตรวจสอบใหม่เฉพาะรหัสที่นำเข้า ข้อมูลสแกนนิ้วยังคงอยู่"
-                : "ใช้รายชื่อในไฟล์แทนข้อมูลพนักงานทั้งหมด พนักงานที่ไม่มีในไฟล์จะถูกนำออก ล้างตารางกะและผลตรวจสอบเดิม ข้อมูลสแกนนิ้วยังคงอยู่"
+                ? "เพิ่มหรืออัปเดตพนักงานตามไฟล์ โดยเก็บพนักงานเดิมที่ไม่มีในไฟล์ไว้ และเก็บการเปลี่ยนกะ การจับคู่เข้าออก การยืนยัน OT และการหักพักเดิม"
+                : "แทนที่รายชื่อพนักงานตามไฟล์ แต่เก็บคาบเวลา การจับคู่เข้าออก การเปลี่ยนกะ การยืนยัน OT การหักพัก และประวัติเดิมไว้"
               : "เพิ่มข้อมูลต่อจากทุกไฟล์เดิม ข้ามรายการซ้ำ เก็บสแกนเก่าไว้จนกว่าผู้พัฒนาจะสั่งลบ เปิดผลตรวจสอบใหม่เฉพาะกะที่มีสแกนเพิ่ม",
           )}
         </p>
@@ -255,6 +257,7 @@ export default function SourceDataPage({
             data-filter-active={Boolean(search.trim())}
             value={search}
             onChange={(e) => {
+              setGlobalEmployeeSearch("");
               setSearch(e.target.value);
               setPage(1);
             }}
@@ -304,8 +307,9 @@ export default function SourceDataPage({
               className="button employee-filter-reset"
               aria-label={t("ล้างตัวกรอง")}
               title={t("ล้างตัวกรอง")}
-              disabled={!search && !Object.keys(employeeFilters).length}
+              disabled={!search && !globalEmployeeSearch && !Object.keys(employeeFilters).length}
               onClick={() => {
+                setGlobalEmployeeSearch("");
                 setSearch("");
                 setEmployeeFilters({});
                 setPage(1);

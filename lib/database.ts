@@ -316,12 +316,18 @@ export async function writeEmployees(
   rows: EmployeeRow[],
   mode: "replace" | "merge" = "replace",
 ) {
-  if (mode === "replace") await c.query("DELETE FROM employee_master");
   await c.query(
     `INSERT INTO employee_master SELECT employee_id,source_row,source_data,shift_data,issue FROM jsonb_to_recordset($1::jsonb) AS x(employee_id text,source_row integer,source_data jsonb,shift_data jsonb,issue text)
      ON CONFLICT (employee_id) DO UPDATE SET source_row=EXCLUDED.source_row, source_data=EXCLUDED.source_data, shift_data=EXCLUDED.shift_data, issue=EXCLUDED.issue`,
     [JSON.stringify(rows)],
   );
+  // Replace the roster only after upserting. Existing employee rows keep their
+  // linked profile records; only IDs omitted from a true roster replacement go.
+  if (mode === "replace") {
+    await c.query("DELETE FROM employee_master WHERE employee_id <> ALL($1::text[])", [
+      rows.map((row) => row.employee_id),
+    ]);
+  }
 }
 export async function stagePunches(punches: Punch[], filename: string, receipt?: {id:string;hash:string}) {
   const id = randomUUID(),

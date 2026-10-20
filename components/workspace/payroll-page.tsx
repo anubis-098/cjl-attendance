@@ -30,7 +30,7 @@ const money = (n: number | null | undefined) =>
       });
 export default function PayrollPage() {
   const { t, getLocale } = useTranslation();
-  const { refresh } = useWorkspace();
+  const { refresh, globalEmployeeSearch, setGlobalEmployeeSearch } = useWorkspace();
   const [month, setMonth] = useState(isoLocal(Date.now()).slice(0, 7));
   const [cycle, setCycle] = useState("26-25");
   const [report, setReport] = useState<Report | null>(null);
@@ -48,7 +48,7 @@ export default function PayrollPage() {
   useEffect(() => {
     setSelectedEmployees(new Set());
     setExportOpen(false);
-  }, [month, cycle, search, agency]);
+  }, [month, cycle, search, agency, globalEmployeeSearch]);
   const closeExport = useCallback(() => setExportOpen(false), []);
   const [active, setActive] = useState<string | null>(null);
   useEffect(() => {
@@ -80,9 +80,10 @@ export default function PayrollPage() {
       (report?.rows || []).filter(
         (r) =>
           (agency === "all" || r.agency === agency) &&
-          `${r.id} ${r.name}`.toLowerCase().includes(search.toLowerCase()),
+          `${r.id} ${r.name}`.toLowerCase().includes(search.toLowerCase()) &&
+          (!globalEmployeeSearch.trim() || `${r.id} ${r.name} ${r.agency}`.toLowerCase().includes(globalEmployeeSearch.trim().toLowerCase())),
       ),
-    [report, agency, search],
+    [report, agency, search, globalEmployeeSearch],
   );
   const shownPage = Math.min(page, Math.max(1, Math.ceil(rows.length / 25)));
   const selectedRows = useMemo(
@@ -204,6 +205,7 @@ export default function PayrollPage() {
             data-filter-active={Boolean(search.trim())}
             value={search}
             onChange={(e) => {
+              setGlobalEmployeeSearch("");
               setSearch(e.target.value);
               setPage(1);
             }}
@@ -213,6 +215,7 @@ export default function PayrollPage() {
             data-filter-active={agency !== "all"}
             value={agency}
             onChange={(e) => {
+              setGlobalEmployeeSearch("");
               setAgency(e.target.value);
               setPage(1);
             }}

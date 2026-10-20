@@ -63,6 +63,8 @@ export default function AttendancePage() {
     data,
     setData,
     setToast,
+    globalEmployeeSearch,
+    setGlobalEmployeeSearch,
     filters,
     filtered,
     results,
@@ -88,9 +90,10 @@ export default function AttendancePage() {
       (filters.department === "all" || s.department === filters.department) &&
       (filters.workerType === "all" || (s.worker_type || "unknown") === filters.workerType) &&
       (filters.shift === "all" || s.shift_code === filters.shift) &&
-      (s.emp_name + " " + s.emp_id).toLowerCase().includes(filters.search.toLowerCase()));
+      (s.emp_name + " " + s.emp_id).toLowerCase().includes(filters.search.toLowerCase()) &&
+      (!globalEmployeeSearch.trim() || `${s.emp_id} ${s.emp_name} ${s.agency}`.toLowerCase().includes(globalEmployeeSearch.trim().toLowerCase())));
     return { dates, today: selectedDays.length === 0, count: scannedEmployees(shifts, data.punches, dates), scheduledCount: scheduledEmployeeCount(shifts, today), scheduledDate: today };
-  }, [data.shifts, data.punches, selectedDays, today, filters]);
+  }, [data.shifts, data.punches, selectedDays, today, filters, globalEmployeeSearch]);
   useEffect(() => {
     setSelected([]);
     setSelectedDays([]);
@@ -256,6 +259,7 @@ export default function AttendancePage() {
           model={model}
           showView={false}
           onClearFilters={() => {
+            setGlobalEmployeeSearch("");
             model.setFilters({
               date: today,
               view: "week",

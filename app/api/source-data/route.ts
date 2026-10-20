@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       const options: Record<string, string[]> = {};
       const args: unknown[] = [`%${search}%`];
       const conditions = [
-        "(employee_id ILIKE $1 OR source_data->>'ชื่อ-นามสกุล' ILIKE $1)",
+        "(employee_id ILIKE $1 OR source_data::text ILIKE $1)",
       ];
       for (const filter of EMPLOYEE_FILTERS) {
         const values = distinct.rows.filter((row) => row.key === filter.header);

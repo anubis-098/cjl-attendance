@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { normalizeMasterDate, readEmployeeFile } from "./master-data";
 import { masterDate } from "./master-comparison";
 import { normalizeDepartment } from "./departments";
-import { prepareEmployeeMerge } from "./employee-import";
+import { prepareMasterImport } from "./employee-import";
 import { demoData } from "./engine";
 import { readMasterSheet } from "./master-headers";
 import * as XLSX from "xlsx";
@@ -64,7 +64,7 @@ test("latest Section field drives employee section and master departure date", a
   assert.equal(employee.shift_data?.source_department, "Frozen");
 });
 
-test("employee merge retains unrelated schedules and reviews and refreshes imported master shifts", () => {
+test("Master import refreshes generated plans and preserves all per-shift review decisions", () => {
   const data = demoData();
   const shift = data.shifts[0];
   data.shifts = [
@@ -73,12 +73,24 @@ test("employee merge retains unrelated schedules and reviews and refreshes impor
     { ...shift, emp_id: "A", date: "2026-09-25", source_day_code: "D" },
   ];
   data.reviews = {
-    "A|2026-09-24": { approved: true, overBudget: false, note: "" },
+    "A|2026-09-24": {
+      approved: true,
+      overBudget: true,
+      note: "verified",
+      inTime: "2026-09-24T08:00:00",
+      outTime: "2026-09-24T18:30:00",
+      manualPair: true,
+      deductOTBreak: true,
+      otRulesVersion: 6,
+    },
     "B|2026-09-24": { approved: true, overBudget: false, note: "" },
   };
-  const merged = prepareEmployeeMerge(data, ["A", "C"]);
+  const merged = prepareMasterImport(data, ["A", "C"]);
   assert.deepEqual(merged.shifts, data.shifts.slice(1));
-  assert.deepEqual(Object.keys(merged.reviews), ["B|2026-09-24"]);
+  assert.deepEqual(merged.reviews, data.reviews);
+  assert.equal(merged.reviews["A|2026-09-24"].manualPair, true);
+  assert.equal(merged.reviews["A|2026-09-24"].approved, true);
+  assert.equal(merged.reviews["A|2026-09-24"].deductOTBreak, true);
   assert.equal(merged.punches, data.punches);
   assert.equal(merged.shiftOverrides, data.shiftOverrides);
   assert.equal(data.shifts.length, 3);

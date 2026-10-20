@@ -8,7 +8,7 @@ import { buildActualTimeline } from "@/lib/actual-timeline";
 import { attendancePeriod } from "@/lib/attendance-summary";
 export function useAttendance() {
   const workspace = useWorkspace();
-  const { data, filters, punchesByEmployee } = workspace;
+  const { data, filters, punchesByEmployee, globalEmployeeSearch } = workspace;
   const actualTimeline = useMemo(
     () => buildActualTimeline(data.shifts, punchesByEmployee, data.reviews),
     [data.shifts, punchesByEmployee, data.reviews],
@@ -29,7 +29,11 @@ export function useAttendance() {
         (shift === "all" || s.shift_code === shift) &&
         (s.emp_name + " " + s.emp_id)
           .toLowerCase()
-          .includes(search.toLowerCase()),
+          .includes(search.toLowerCase()) &&
+        (!globalEmployeeSearch.trim() ||
+          `${s.emp_id} ${s.emp_name} ${s.agency}`
+            .toLowerCase()
+            .includes(globalEmployeeSearch.trim().toLowerCase())),
     );
     const results = new Map(
       candidates.map((s) => [
@@ -94,7 +98,7 @@ export function useAttendance() {
       employees: [...employees.values()],
       totals: { normal, ot, requested, pending, issues },
     };
-  }, [data.shifts, data.reviews, filters, punchesByEmployee, actualTimeline]);
+  }, [data.shifts, data.reviews, filters, punchesByEmployee, actualTimeline, globalEmployeeSearch]);
   return { ...workspace, ...computed, actualTimeline };
 }
 export type AttendanceData = ReturnType<typeof useAttendance>;

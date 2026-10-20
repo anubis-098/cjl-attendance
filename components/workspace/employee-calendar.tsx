@@ -6,7 +6,6 @@ import EmployeePayrollSettings from "./employee-payroll-settings";
 import EmployeeProfileCard from "./employee-profile-card";
 import { useAccount } from "../auth-provider";
 import { canManageAttendance } from "@/lib/permissions";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWorkspace } from "./provider";
@@ -243,9 +242,6 @@ export default function EmployeeCalendar({
       {t(preview.popup)}
       <div className="page-heading employee-calendar-heading">
         <div>
-          <Link href="/attendance" className="employee-calendar-link">
-            {t("← กลับตารางเวลาพนักงาน")}
-          </Link>
           <h1>{employee?.emp_name || name || employeeId}</h1>
           <p>
             {employeeId}

@@ -706,9 +706,9 @@ OT รวมคำนวณ|Calculated OT total
 เลือกไฟล์ All-attlogd*.txt จากเครื่องสแกนนิ้ว|Select an All-attlogd*.txt file from the fingerprint system
 วิธีนำเข้าข้อมูลพนักงาน|Employee import mode
 เพิ่ม/อัปเดตข้อมูล|Add / update records
-แทนที่ข้อมูลทั้งหมด|Replace all records
-เพิ่มรหัสใหม่และอัปเดตข้อมูลของรหัสที่มีอยู่ตามไฟล์ เก็บพนักงานที่ไม่มีในไฟล์และตารางกะรายวันเดิมไว้ เปิดผลตรวจสอบใหม่เฉพาะรหัสที่นำเข้า ข้อมูลสแกนนิ้วยังคงอยู่|Add new IDs and update existing employees. Retain other employees and daily schedules. Reopen reviews only for imported IDs. Fingerprints are retained.
-ใช้รายชื่อในไฟล์แทนข้อมูลพนักงานทั้งหมด พนักงานที่ไม่มีในไฟล์จะถูกนำออก ล้างตารางกะและผลตรวจสอบเดิม ข้อมูลสแกนนิ้วยังคงอยู่|Replace all employees with this file, removing those not listed and clearing schedules and reviews. Fingerprints are retained.
+แทนที่รายชื่อพนักงาน|Replace employee roster
+เพิ่มหรืออัปเดตพนักงานตามไฟล์ โดยเก็บพนักงานเดิมที่ไม่มีในไฟล์ไว้ และเก็บการเปลี่ยนกะ การจับคู่เข้าออก การยืนยัน OT และการหักพักเดิม|Add or update employees from this file. Keep employees not listed, along with shift changes, manual scan pairs, OT approvals, and break deductions.
+แทนที่รายชื่อพนักงานตามไฟล์ แต่เก็บคาบเวลา การจับคู่เข้าออก การเปลี่ยนกะ การยืนยัน OT การหักพัก และประวัติเดิมไว้|Replace the employee roster with this file while retaining attendance periods, manual scan pairs, shift changes, OT approvals, break deductions, and history.
 เพิ่มข้อมูลต่อจากทุกไฟล์เดิม ข้ามรายการซ้ำ เก็บสแกนเก่าไว้จนกว่าผู้พัฒนาจะสั่งลบ เปิดผลตรวจสอบใหม่เฉพาะกะที่มีสแกนเพิ่ม|Append to all existing files and skip duplicates. Old punches are retained until a developer explicitly deletes them. Only affected shift reviews are reopened.
 กำลังนำเข้า...|Importing...
 นำเข้าไฟล์|Import file
@@ -967,6 +967,10 @@ export const english: Record<string, string> = Object.fromEntries(
     }),
 );
 export const thai: Record<string, string> = {
+  "Search employees by ID, name, or agency": "ค้นหารหัสพนักงาน ชื่อ หรือ Agency",
+  "Clear filter": "ล้างตัวกรอง",
+  "Go back": "ย้อนกลับ",
+  "Scroll to top": "เลื่อนขึ้นด้านบน",
   Attendance: "เวลาทำงาน",
   Approvals: "การอนุมัติ",
   "Audit log": "ประวัติการตรวจสอบ",

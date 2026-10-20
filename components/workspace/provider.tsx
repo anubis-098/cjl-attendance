@@ -65,6 +65,8 @@ type Workspace = {
   employeeCount: number;
   filters: Filters;
   setFilters: Dispatch<SetStateAction<Filters>>;
+  globalEmployeeSearch: string;
+  setGlobalEmployeeSearch: Dispatch<SetStateAction<string>>;
   toast: string;
   setToast: Dispatch<SetStateAction<string>>;
   punchesByEmployee: Map<string, Punch[]>;
@@ -76,6 +78,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [data, replaceData] = useState<Data>(empty),
     [employeeCount, setEmployeeCount] = useState(0),
     [filters, setFilters] = useState(defaults),
+    [globalEmployeeSearch, setGlobalEmployeeSearch] = useState(""),
     [loaded, setLoaded] = useState(false),
     [error, setError] = useState(""),
     [toast, setToast] = useState("");
@@ -106,6 +109,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         setError(e.message);
       });
     try {
+      const savedSearch = sessionStorage.getItem("cj-global-employee-search");
+      if (savedSearch) setGlobalEmployeeSearch(savedSearch);
       const f = JSON.parse(
         sessionStorage.getItem("cj-workspace-filters") || "null",
       );
@@ -125,6 +130,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } catch {}
     // Legacy browser data is never read or copied into SQL.
   }, [refresh]);
+  useEffect(() => {
+    try {
+      if (globalEmployeeSearch) sessionStorage.setItem("cj-global-employee-search", globalEmployeeSearch);
+      else sessionStorage.removeItem("cj-global-employee-search");
+    } catch {}
+  }, [globalEmployeeSearch]);
   useEffect(() => {
     if (loaded)
       try {
@@ -292,6 +303,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       employeeCount,
       filters,
       setFilters,
+      globalEmployeeSearch,
+      setGlobalEmployeeSearch,
       toast,
       setToast,
       punchesByEmployee,
@@ -307,6 +320,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       refresh,
       employeeCount,
       filters,
+      globalEmployeeSearch,
       toast,
       punchesByEmployee,
       saveHolidays,

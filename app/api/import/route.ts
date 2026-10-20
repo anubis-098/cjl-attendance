@@ -1,6 +1,5 @@
 import { guard } from "@/lib/auth";
 import {
-  emptyData,
   readWorkspace,
   stagePunches,
   updateEmployeeStore,
@@ -9,7 +8,7 @@ import {
 import { readEmployeeFile } from "@/lib/master-data";
 import { importCJFiles, parseFingerLog } from "@/lib/import-cj";
 import { importFiles } from "@/lib/import";
-import { prepareEmployeeMerge } from "@/lib/employee-import";
+import { prepareMasterImport } from "@/lib/employee-import";
 import {
   reopenChangedScans,
   type FingerprintImportSummary,
@@ -48,13 +47,10 @@ export async function POST(request: Request) {
       }
       await updateEmployeeStore(async (c, state) => {
         await writeEmployees(c, employees, employeeMode);
-        const base =
-          employeeMode === "merge"
-            ? prepareEmployeeMerge(
-                state.data,
-                employees.map((employee) => employee.employee_id),
-              )
-            : emptyData();
+        const base = prepareMasterImport(
+          state.data,
+          employees.map((employee) => employee.employee_id),
+        );
         await c.query("UPDATE workspace SET data=$1 WHERE id=1", [
           JSON.stringify({
             ...base,
@@ -71,8 +67,8 @@ export async function POST(request: Request) {
                 timestamp: new Date().toISOString(),
                 reason:
                   employeeMode === "merge"
-                    ? "เพิ่ม/อัปเดตข้อมูลพนักงาน และเปิดผลตรวจสอบเฉพาะรหัสที่นำเข้าใหม่"
-                    : "แทนที่ข้อมูลพนักงานทั้งหมด และเปิดผลตรวจสอบใหม่",
+                    ? "เพิ่ม/อัปเดต Master โดยเก็บผลตรวจสอบและการยืนยันเวลาเดิมไว้"
+                    : "แทนที่รายชื่อพนักงาน โดยเก็บประวัติการตรวจสอบเวลาและการยืนยันเดิมไว้",
                 before: "",
                 after: String(employees.length),
               },

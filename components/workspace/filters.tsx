@@ -20,7 +20,7 @@ export function ViewMode({ model }: { model: AttendanceData }) {
           key={value}
           className={model.filters.view === value ? "selected" : ""}
           aria-pressed={model.filters.view === value}
-          onClick={() => model.setFilters((p) => ({ ...p, view: value, rangeEnd: p.rangeEnd && p.rangeEnd >= p.date ? p.rangeEnd : addDays(p.date, 6) }))}
+          onClick={() => { model.setGlobalEmployeeSearch(""); model.setFilters((p) => ({ ...p, view: value, rangeEnd: p.rangeEnd && p.rangeEnd >= p.date ? p.rangeEnd : addDays(p.date, 6) })); }}
         >
           {t(label)}
         </button>
@@ -41,13 +41,17 @@ export default function Filters({
 }) {
   const { t, getLocale } = useTranslation();
   const { data, filters, setFilters, start, count, days } = model;
+  const changeFilters = (update: Parameters<typeof setFilters>[0]) => {
+    model.setGlobalEmployeeSearch("");
+    setFilters(update);
+  };
   const { date, view, search, agency, department, shift } = filters;
-  const setDate = (date: string) => setFilters((p) => ({ ...p, date, rangeEnd: p.view === "range" ? addDays(date, count - 1) : p.rangeEnd }));
-  const setSearch = (search: string) => setFilters((p) => ({ ...p, search }));
-  const setAgency = (agency: string) => setFilters((p) => ({ ...p, agency }));
+  const setDate = (date: string) => changeFilters((p) => ({ ...p, date, rangeEnd: p.view === "range" ? addDays(date, count - 1) : p.rangeEnd }));
+  const setSearch = (search: string) => changeFilters((p) => ({ ...p, search }));
+  const setAgency = (agency: string) => changeFilters((p) => ({ ...p, agency }));
   const setDepartment = (department: string) =>
-    setFilters((p) => ({ ...p, department }));
-  const setShift = (shift: string) => setFilters((p) => ({ ...p, shift }));
+    changeFilters((p) => ({ ...p, department }));
+  const setShift = (shift: string) => changeFilters((p) => ({ ...p, shift }));
   return (
     <>
       {showView && (
@@ -100,14 +104,14 @@ export default function Filters({
             onChange={(e) => {
               if (e.target.value) {
                 const date = e.target.value;
-                setFilters(p => ({ ...p, date, rangeEnd: p.view === "range" && (!p.rangeEnd || p.rangeEnd < date) ? date : p.rangeEnd }));
+                changeFilters(p => ({ ...p, date, rangeEnd: p.view === "range" && (!p.rangeEnd || p.rangeEnd < date) ? date : p.rangeEnd }));
               }
             }}
           />
           {view === "range" && <>
             <span>{t("ถึงวันที่")}</span>
             <input aria-label={t("ถึงวันที่")} type="date" min={date} data-filter-active={true} value={filters.rangeEnd || date}
-              onChange={e => { if (e.target.value && e.target.value >= date) setFilters(p => ({ ...p, rangeEnd: e.target.value })); }} />
+              onChange={e => { if (e.target.value && e.target.value >= date) changeFilters(p => ({ ...p, rangeEnd: e.target.value })); }} />
           </>}
           <button
             className="button today"
@@ -186,7 +190,7 @@ export default function Filters({
           data-filter-active={filters.workerType !== "all"}
           value={filters.workerType}
           onChange={(e) =>
-            setFilters((p) => ({ ...p, workerType: e.target.value }))
+            changeFilters((p) => ({ ...p, workerType: e.target.value }))
           }
         >
           <option value="all">{t("พนักงานทุกประเภท")}</option>

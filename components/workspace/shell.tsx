@@ -6,13 +6,16 @@ import {
   CalendarDays,
   Check,
   History,
+  ArrowLeft,
+  ArrowUp,
+  Search,
   Settings2,
   ShieldCheck,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useWorkspace } from "./provider";
 import { useAccount } from "../auth-provider";
@@ -22,8 +25,9 @@ import ReadOnlyWorkspace from "./read-only-workspace";
 import WorkspaceSelector from "./workspace-selector";
 export default function Shell({ children }: { children: ReactNode }) {
   const { t, getLocale } = useTranslation();
-  const { toast, setToast } = useWorkspace();
+  const { toast, setToast, globalEmployeeSearch, setGlobalEmployeeSearch } = useWorkspace();
   const pathname = usePathname();
+  const router = useRouter();
   const account = useAccount();
   const title: Record<string, string> = {
     "/attendance": "Attendance",
@@ -108,7 +112,19 @@ export default function Shell({ children }: { children: ReactNode }) {
       </aside>
       <div className="main-shell">
         <header className="topbar">
-          <div>
+          <div className="topbar-heading">
+            <button
+              type="button"
+              className="page-back-button"
+              aria-label={t("Go back")}
+              title={t("Go back")}
+              onClick={() => {
+                if (window.history.length > 1) window.history.back();
+                else router.push("/attendance");
+              }}
+            >
+              <ArrowLeft size={17} />
+            </button>
             {t("Workspace ")}
             <span>{t("/")}</span>
             <strong>
@@ -120,6 +136,25 @@ export default function Shell({ children }: { children: ReactNode }) {
               )}
             </strong>
           </div>
+          <label className="topbar-search" data-active={Boolean(globalEmployeeSearch.trim())}>
+            <Search size={17} aria-hidden="true" />
+            <input
+              type="search"
+              aria-label={t("Search employees by ID, name, or agency")}
+              placeholder={t("Search employees by ID, name, or agency")}
+              value={globalEmployeeSearch}
+              onChange={(event) => setGlobalEmployeeSearch(event.target.value)}
+            />
+            <button
+              type="button"
+              aria-label={t("Clear filter")}
+              title={t("Clear filter")}
+              disabled={!globalEmployeeSearch}
+              onClick={() => setGlobalEmployeeSearch("")}
+            >
+              <X size={16} />
+            </button>
+          </label>
           <div className="topbar-right">
             <span className="local-tag">
               <span className="green-dot" />
@@ -155,6 +190,15 @@ export default function Shell({ children }: { children: ReactNode }) {
           </footer>
         </main>
       </div>
+      <button
+        type="button"
+        className="scroll-top-button"
+        aria-label={t("Scroll to top")}
+        title={t("Scroll to top")}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      >
+        <ArrowUp size={19} />
+      </button>
       {toast && (
         <div className="toast" role="status">
           <Check size={17} />
