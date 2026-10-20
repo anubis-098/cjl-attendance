@@ -590,9 +590,13 @@ test("outside matching window and other employee punches are excluded", () => {
         ...p,
         device_emp_id: "002",
       })),
-    ).missing,
+    ).absent,
     true,
   );
+  const noScan = reconcile(shift, []);
+  assert.equal(noScan.missing, false);
+  assert.equal(noScan.status, "ABSENT");
+  assert.equal(canApprove(noScan), false);
 });
 test("unknown punch cannot act as both entry and exit", () => {
   const r = reconcile(shift, [
@@ -620,11 +624,11 @@ test("new holiday codes keep company OT rates and worked holidays require scans"
     assert.equal(r.rawOT["2.0"], 8);
     assert.equal(r.rawOT["3.0"], 3);
   }
-  for (const code of ["H8", "PH8"])
-    assert.equal(
-      reconcile({ ...shift, shift_code: code, requested_ot_hrs: 0 }, []).status,
-      "MISSING",
-    );
+  for (const code of ["H8", "PH8"]) {
+    const absent = reconcile({ ...shift, shift_code: code, requested_ot_hrs: 0 }, []);
+    assert.equal(absent.status, "ABSENT");
+    assert.equal(absent.missing, false);
+  }
   for (const code of ["H", "PH"])
     assert.equal(
       reconcile({ ...shift, shift_code: code, requested_ot_hrs: 0 }, []).status,

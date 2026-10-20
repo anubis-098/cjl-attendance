@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { layoutShifts } from "./calendar-layout";
 import type { ActualInterval } from "./actual-timeline";
-import { keyOf, reconcile, stamp, type Shift } from "./engine";
+import { keyOf, reconcile, stamp, type Punch, type Shift } from "./engine";
 const shift = (date: string): Shift => ({
   emp_id: "N",
   device_emp_id: "N",
@@ -16,19 +16,24 @@ const shift = (date: string): Shift => ({
   requested_ot_hrs: 0,
   ot_task_target: "",
 });
-test("missing scans remain pending until the scheduled end in Bangkok time", () => {
+test("an empty day is absent while a one-sided scan stays pending until scheduled end", () => {
   for (const [start, end, endDate] of [
     ["08:00", "17:00", "2026-09-24"],
     ["20:00", "05:00", "2026-09-25"],
   ]) {
     const s = { ...shift("2026-09-24"), shift_start: start, shift_end: end };
-    for (const punches of [[], [{ device_emp_id: "N", punch_timestamp: `2026-09-24 ${start}:00`, punch_type: "IN" as const }]]) {
+    const cases: [Punch[], boolean][] = [
+      [[], false],
+      [[{ device_emp_id: "N", punch_timestamp: `2026-09-24 ${start}:00`, punch_type: "IN" }], true],
+    ];
+    for (const [punches, shouldBePending] of cases) {
       const r = reconcile(s, punches);
       const at = (now: number) => layoutShifts([s], [s.date, endDate], new Map([[keyOf(s), r]]), now)[0];
-      assert.equal(at(stamp("2026-09-24", "10:16")).pending, true);
-      assert.equal(at(stamp(endDate, end) - 1).pending, true);
+      assert.equal(at(stamp("2026-09-24", "10:16")).pending, shouldBePending);
+      assert.equal(at(stamp(endDate, end) - 1).pending, shouldBePending);
       assert.equal(at(stamp(endDate, end)).pending, false);
-      assert.equal(r.missing, true);
+      assert.equal(r.missing, shouldBePending);
+      assert.equal(r.absent, !shouldBePending);
     }
   }
 });

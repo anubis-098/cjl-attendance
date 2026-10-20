@@ -191,11 +191,15 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
     logs.length === 0 &&
     !review?.inTime &&
     !review?.outTime;
+  const hasAttendanceEvidence =
+    logs.length > 0 || !!review?.inTime || !!review?.outTime;
+  const absent = !off && !nonWorking && !hasAttendanceEvidence;
   const missing =
-    !off && !nonWorking && (inMs === undefined || outMs === undefined);
+    !off && !nonWorking && hasAttendanceEvidence &&
+    (inMs === undefined || outMs === undefined);
   const late =
     !off && !nonWorking && inMs !== undefined && inMs > start + 300000;
-  const period = !off && !missing && !nonWorking
+  const period = !off && !missing && !nonWorking && !absent
     ? workTime(inMs!, outMs!, review?.deductOTBreak, { start, end })
     : undefined;
   const withinShift = period?.normalHours ?? 0;
@@ -212,7 +216,7 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
   const normal =
     publicHoliday || weeklyHoliday || ratePending ? 0 : withinShift;
   const rawOT = emptyOT();
-  if (!ratePending && !off && !missing) {
+  if (!ratePending && !off && !missing && !absent) {
     if (publicHoliday) {
       rawOT["1.0"] = floorOT(withinShift);
       rawOT["3.0"] = beforeShiftOT + afterShiftOT;
@@ -291,6 +295,7 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
     !approvalNeedsReview &&
     !off &&
     !missing &&
+    !absent &&
     !ratePending &&
     !nonWorking;
   const overBudgetApproved = approved;
@@ -307,17 +312,19 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
           : "LEAVE"
       : off
         ? "OFF"
-        : missing
-          ? "MISSING"
-          : ratePending
-            ? "RATE_PENDING"
-            : requiresOvertimeApproval
-              ? "UNAPPROVED"
-              : approved
-                ? "APPROVED"
-                : late
-                  ? "LATE"
-                  : "NORMAL";
+        : absent
+          ? "ABSENT"
+          : missing
+            ? "MISSING"
+            : ratePending
+              ? "RATE_PENDING"
+              : requiresOvertimeApproval
+                ? "UNAPPROVED"
+                : approved
+                  ? "APPROVED"
+                  : late
+                    ? "LATE"
+                    : "NORMAL";
   return {
     logs,
     calculationStart: period?.calculationStart,
@@ -348,6 +355,7 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
     ratePending,
     requestUnknown,
     nonWorking,
+    absent,
     scheduleConflict,
     missing,
     late,

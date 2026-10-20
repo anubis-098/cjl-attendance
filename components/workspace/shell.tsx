@@ -17,6 +17,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { useWorkspace } from "./provider";
 import { useAccount } from "../auth-provider";
 import LanguageSwitcher from "../language-switcher";
@@ -25,10 +26,20 @@ import ReadOnlyWorkspace from "./read-only-workspace";
 import WorkspaceSelector from "./workspace-selector";
 export default function Shell({ children }: { children: ReactNode }) {
   const { t, getLocale } = useTranslation();
-  const { toast, setToast, globalEmployeeSearch, setGlobalEmployeeSearch } = useWorkspace();
+  const { toast, setToast, data, globalEmployeeSearch, setGlobalEmployeeSearch } = useWorkspace();
   const pathname = usePathname();
   const router = useRouter();
   const account = useAccount();
+  const globalSearchHasResults = useMemo(() => {
+    const query = globalEmployeeSearch.trim().toLocaleLowerCase();
+    return query
+      ? data.shifts.some((shift) =>
+          `${shift.emp_id} ${shift.emp_name} ${shift.agency}`
+            .toLocaleLowerCase()
+            .includes(query),
+        )
+      : null;
+  }, [data.shifts, globalEmployeeSearch]);
   const title: Record<string, string> = {
     "/attendance": "Attendance",
     "/approvals": "Approvals",
@@ -136,7 +147,11 @@ export default function Shell({ children }: { children: ReactNode }) {
               )}
             </strong>
           </div>
-          <label className="topbar-search" data-active={Boolean(globalEmployeeSearch.trim())}>
+          <label
+            className="topbar-search"
+            data-active={Boolean(globalEmployeeSearch.trim())}
+            data-result={globalSearchHasResults === null ? "idle" : globalSearchHasResults ? "found" : "empty"}
+          >
             <Search size={17} aria-hidden="true" />
             <input
               type="search"

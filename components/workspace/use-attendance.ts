@@ -80,7 +80,7 @@ export function useAttendance() {
       ot += r.approved ? r.actualOT : 0;
       requested += r.punchedOT;
       pending += Number(
-        !r.off && !r.approved && (!r.nonWorking || r.scheduleConflict),
+        !r.off && !r.absent && !r.approved && (!r.nonWorking || r.scheduleConflict),
       );
       issues += Number(
         !["NORMAL", "APPROVED", "OFF", "LEAVE", "RESIGNED"].includes(r.status),

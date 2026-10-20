@@ -46,7 +46,7 @@ export default function RecordsPage({
           const r = results.get(keyOf(s))!;
           const included =
             mode === "approvals"
-              ? !r.off && !r.approved && (!r.nonWorking || r.scheduleConflict)
+              ? !r.off && !r.absent && !r.approved && (!r.nonWorking || r.scheduleConflict)
               : mode === "normal-hours"
                 ? r.normal > 0
                 : r.punchedOT > 0;
@@ -65,7 +65,7 @@ export default function RecordsPage({
     let incompleteCount = 0;
     for (const s of filtered) {
       const r = results.get(keyOf(s));
-      if (!r || r.off || r.nonWorking) continue;
+      if (!r || r.off || r.absent || r.nonWorking) continue;
       const intervals = model.actualTimeline.get(keyOf(s)) || [];
       const incomplete = r.missing || intervals.some((interval) => interval.estimated || interval.uncertain);
       if (!incomplete) continue;

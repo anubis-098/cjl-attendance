@@ -36,7 +36,7 @@ export function matchesStatus(r: ReturnType<typeof reconcile>, status: string) {
         r.requiresOvertimeApproval
       );
     case "pending":
-      return !r.approved && !r.off && (!r.nonWorking || r.scheduleConflict);
+      return !r.approved && !r.off && !r.absent && (!r.nonWorking || r.scheduleConflict);
     case "approved":
       return r.approved;
     case "MISSING":
@@ -74,7 +74,7 @@ export function audit(
   };
 }
 export const canApprove = (r: ReturnType<typeof reconcile>) =>
-  !r.off && !r.nonWorking && !r.missing && !r.ratePending && !r.approved;
+  !r.off && !r.absent && !r.nonWorking && !r.missing && !r.ratePending && !r.approved;
 export function approveShifts(data: Data, shifts: Shift[]): Data {
   const reviews = { ...data.reviews },
     logs: Audit[] = [];
