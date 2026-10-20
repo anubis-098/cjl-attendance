@@ -8,6 +8,7 @@ export default function ShiftEditor({
   employee,
   count,
   saving,
+  reason,
   onConfirm,
   onSelectAll,
   onClear,
@@ -16,6 +17,7 @@ export default function ShiftEditor({
   employee?: Shift;
   count: number;
   saving: boolean;
+  reason: string;
   onConfirm: (
     change: Omit<ShiftOverride, "reason"> | null,
     reason: string,
@@ -33,7 +35,6 @@ export default function ShiftEditor({
   );
   const [start, setStart] = useState(employee?.shift_start || "08:00"),
     [end, setEnd] = useState(employee?.shift_end || "17:00");
-  const [reason, setReason] = useState("");
   const presets = [
     ...new Set(
       [
@@ -121,17 +122,6 @@ export default function ShiftEditor({
               </label>
             </>
           )}
-          <label>
-            {t("เหตุผลเปลี่ยนกะ")}
-            <input
-              aria-label={t("เหตุผลเปลี่ยนกะ")}
-              required
-              maxLength={1000}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder={t("เช่น เปลี่ยนกะตามที่หัวหน้ายืนยัน")}
-            />
-          </label>
         </div>
         <p>
           {t(code !== "RESET" && end < start ? "เวลาออกเป็นวันถัดไป · " : "")}

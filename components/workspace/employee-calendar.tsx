@@ -87,6 +87,7 @@ export default function EmployeeCalendar({
   const [saving, setSaving] = useState(false);
   const [holidayMode, setHolidayMode] = useState(false);
   const [shiftMode, setShiftMode] = useState(false);
+  const [shiftReason, setShiftReason] = useState("");
   const [manualMode, setManualMode] = useState(false);
   const [holidayDates, setHolidayDates] = useState<string[]>([]);
   const [companyOpen, setCompanyOpen] = useState(false);
@@ -110,6 +111,7 @@ export default function EmployeeCalendar({
     setSelecting(false);
     setHolidayMode(false);
     setShiftMode(false);
+    setShiftReason("");
     setHolidayDates([]);
     setManualMode(false);
   }, [month, employeeId]);
@@ -235,6 +237,7 @@ export default function EmployeeCalendar({
       setToast(`บันทึกกะ ${holidayDates.length} วันแล้ว`);
       setHolidayDates([]);
       setShiftMode(false);
+      setShiftReason("");
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -284,6 +287,20 @@ export default function EmployeeCalendar({
             onBusy={setSaving}
             onClose={closeRequest}
           />
+        )}
+        {shiftMode && (
+          <label className="shift-reason-field">
+            {t("เหตุผลเปลี่ยนกะ")}
+            <input
+              aria-label={t("เหตุผลเปลี่ยนกะ")}
+              required
+              maxLength={1000}
+              value={shiftReason}
+              disabled={saving}
+              onChange={(event) => setShiftReason(event.target.value)}
+              placeholder={t("เช่น เปลี่ยนกะตามที่หัวหน้ายืนยัน")}
+            />
+          </label>
         )}
         <div className="month-controls">
           <button
@@ -367,6 +384,7 @@ export default function EmployeeCalendar({
             aria-pressed={shiftMode}
             onClick={() => {
               setShiftMode(!shiftMode);
+              setShiftReason("");
               setRequestOpen(false);
               setRequestDay(null);
               setHolidayMode(false);
@@ -411,6 +429,7 @@ export default function EmployeeCalendar({
             employee={employee}
             count={holidayDates.length}
             saving={saving}
+            reason={shiftReason}
             onConfirm={confirmShifts}
             onSelectAll={() =>
               setHolidayDates(days.filter((d) => d.startsWith(month)))

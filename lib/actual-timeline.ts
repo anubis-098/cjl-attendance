@@ -123,7 +123,7 @@ function inferScanSequence(punches: Punch[], supportedEntries = new Set<number>(
     .map((p) => ({ ms: punchTime(p.punch_timestamp), type: p.punch_type }))
     .filter((p) => Number.isFinite(p.ms))
     .sort((a, b) => a.ms - b.ms);
-  const scans: typeof sorted = [];
+  const scans: (typeof sorted[number] & { lastMs?: number })[] = [];
   for (const p of sorted) {
     const last = scans.at(-1);
     // Retain opposite explicit directions even when close together.
@@ -133,6 +133,9 @@ function inferScanSequence(punches: Punch[], supportedEntries = new Set<number>(
       (last.type === p.type || p.type === "UNKNOWN" || last.type === "UNKNOWN")
     ) {
       if (last.type === "UNKNOWN" && p.type !== "UNKNOWN") last.type = p.type;
+      // Keep the first timestamp for an entry, but let an exit use the last
+      // scan in a close duplicate cluster.
+      last.lastMs = p.ms;
     } else scans.push({ ...p });
   }
   const n = scans.length,
@@ -149,7 +152,8 @@ function inferScanSequence(punches: Punch[], supportedEntries = new Set<number>(
       // A tail cluster may contain repeat exits, never an explicit new entry.
       // Bound it relative to the first exit rather than chaining indefinitely.
       if (b.type === "IN" || (j > i + 1 && b.ms - scans[i + 1].ms > 3 * HOUR)) break;
-      const hours = (b.ms - a.ms) / HOUR;
+      const endMs = b.lastMs ?? b.ms;
+      const hours = (endMs - a.ms) / HOUR;
       const explicit = a.type === "IN" && b.type === "OUT";
       // Long work is possible, but do not globally turn every overnight rest
       // into a candidate shift: require independent recent entry evidence.
@@ -182,12 +186,13 @@ function inferScanSequence(punches: Punch[], supportedEntries = new Set<number>(
     const a = scans[i],
       b = scans[pairEnds[i]];
     if (pairEnds[i] >= 0) {
+      const outMs = b.lastMs ?? b.ms;
       intervals.push({
-        id: `${a.ms}-${b.ms}`,
+        id: `${a.ms}-${outMs}`,
         start: a.ms,
-        end: b.ms,
+        end: outMs,
         inMs: a.ms,
-        outMs: b.ms,
+        outMs,
         estimated: false,
         uncertain: ambiguous[i],
         reviewed: false,

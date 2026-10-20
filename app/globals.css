@@ -1508,6 +1508,23 @@ h2 {
   gap: 12px;
   padding: 18px;
 }
+.shift-reason-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 18px 0;
+  color: #344b60;
+  font-weight: 600;
+}
+.shift-reason-field input {
+  width: min(100%, 520px);
+  padding: 9px 11px;
+  border: 1px solid #d5e0eb;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
 .month-controls h2 {
   margin: 0;
   font-size: 22px;
