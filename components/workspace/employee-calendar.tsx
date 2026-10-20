@@ -266,7 +266,8 @@ export default function EmployeeCalendar({
           )}
         </div>
       </div>
-      <EmployeeProfileCard employeeId={employeeId} fallbackName={employee?.emp_name || name || employeeId} />
+      <EmployeeProfileCard employeeId={employeeId} fallbackName={employee?.emp_name || name || employeeId}
+        payrollSettings={canEdit ? <EmployeePayrollSettings employeeId={employeeId} month={month} compact /> : undefined} />
       <section
         className={`panel employee-month-panel ${requestOpen ? "request-mode" : ""}`}
       >
@@ -282,7 +283,6 @@ export default function EmployeeCalendar({
             onClose={closeRequest}
           />
         )}
-        {canEdit && <EmployeePayrollSettings employeeId={employeeId} month={month} />}
         <div className="month-controls">
           <button
             className="button"

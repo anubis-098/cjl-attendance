@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Camera, Check, Clock3, Pencil, Trash2, UserRound, X } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useWorkspace } from "./provider";
@@ -14,15 +15,18 @@ type Profile = {
   issue: string; hasPhoto: boolean;
 };
 const empty: Profile = { name: "", department: "", section: "", shiftCode: "", shiftStart: "08:00", shiftEnd: "17:00", startDate: "", weeklyHoliday: "", status: "", company: "", contract: "", endDate: "", issue: "", hasPhoto: false };
-const fields: { key: keyof Profile; label: string; type?: string }[] = [
-  { key: "name", label: "Full name" }, { key: "department", label: "Department" },
-  { key: "section", label: "Section" }, { key: "company", label: "Company" },
-  { key: "shiftCode", label: "Shift code" }, { key: "shiftStart", label: "Shift starts", type: "time" },
-  { key: "shiftEnd", label: "Shift ends", type: "time" }, { key: "weeklyHoliday", label: "Weekly holiday" },
-  { key: "status", label: "Employment status" }, { key: "contract", label: "Contract" },
+// Select choices verified against Master_Name_List_update_19-oct-26.xlsx.
+const fields: { key: keyof Profile; label: string; type?: string; options?: string[] }[] = [
+  { key: "name", label: "Full name" },
+  { key: "department", label: "Department", options: ["CDC Fresh Food Opearation", "CDC Dry Food Operation"] },
+  { key: "section", label: "Section", options: ["Chilled", "Frozen", "FD-FT", "Despatch", "Inventory FF", "Data Entry", "Inventory FZ", "Dry", "Fresh Equipment Cleaning", "FROZEN", "Seafood", "CS Claim Fresh", "FV", "Equip Cleaning"] },
+  { key: "company", label: "Company", options: ["The First", "Buzz", "Beyond", "Direk", "STM"] },
+  { key: "shiftCode", label: "Shift code", options: ["A", "M", "D", "N"] }, { key: "shiftStart", label: "Shift starts", type: "time" },
+  { key: "shiftEnd", label: "Shift ends", type: "time" }, { key: "weeklyHoliday", label: "Weekly holiday", options: ["อาทิตย์", "อังคาร", "เสาร์"] },
+  { key: "status", label: "Employment status", options: ["Active", "Resign"] }, { key: "contract", label: "Contract", options: ["Normal", "Resigned", "Contract"] },
   { key: "startDate", label: "Start date", type: "date" }, { key: "endDate", label: "End date", type: "date" },
 ];
-export default function EmployeeProfileCard({ employeeId, fallbackName }: { employeeId: string; fallbackName: string }) {
+export default function EmployeeProfileCard({ employeeId, fallbackName, payrollSettings }: { employeeId: string; fallbackName: string; payrollSettings?: ReactNode }) {
   const { t, getLocale } = useTranslation();
   const { refresh, setToast } = useWorkspace();
   const canEdit = canManageAttendance(useAccount().role);
@@ -100,16 +104,18 @@ export default function EmployeeProfileCard({ employeeId, fallbackName }: { empl
           <input ref={fileRef} className="employee-photo-input" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event => void uploadPhoto(event.target.files?.[0])} />
         </div>
         <div className="employee-profile-title">
-          <div className="employee-profile-name-line"><div><h1>{profile.name || fallbackName || employeeId}</h1><p>{employeeId}</p></div>
+          <div className="employee-profile-name-line"><div><h1>{profile.name || fallbackName || employeeId}</h1><p>{employeeId}</p></div></div>
+          <div className="employee-profile-meta-row">
+            <div className="employee-profile-tags">
+              {profile.department && <span className="employee-profile-tag department-tag">{profile.department}</span>}
+              {profile.company && <span className="employee-profile-tag">{profile.company}</span>}
+              {profile.status && <span className={`employee-profile-tag ${profile.status.toLowerCase().includes("resign") ? "status-inactive" : "status-active"}`}>{profile.status}</span>}
+            </div>
             <div className="employee-profile-actions">
+              {payrollSettings}
               {canEdit && profile.hasPhoto && <button type="button" className="button employee-photo-remove" disabled={busy} onClick={() => void deletePhoto()}><Trash2 size={15}/>{t("Remove photo")}</button>}
               {canEdit && <button type="button" className="button primary" disabled={busy || loading} onClick={edit}><Pencil size={15}/>{t("Edit profile")}</button>}
             </div>
-          </div>
-          <div className="employee-profile-tags">
-            {profile.department && <span className="employee-profile-tag department-tag">{profile.department}</span>}
-            {profile.company && <span className="employee-profile-tag">{profile.company}</span>}
-            {profile.status && <span className={`employee-profile-tag ${profile.status.toLowerCase().includes("resign") ? "status-inactive" : "status-active"}`}>{profile.status}</span>}
           </div>
         </div>
       </div>
@@ -124,7 +130,7 @@ export default function EmployeeProfileCard({ employeeId, fallbackName }: { empl
       <section className="employee-profile-modal" role="dialog" aria-modal="true" aria-labelledby="employee-profile-edit-title">
         <header><div><h2 id="employee-profile-edit-title">{t("Edit employee profile")}</h2><p>{employeeId}</p></div><button className="button" type="button" aria-label={t("Close")} disabled={busy} onClick={() => setEditing(false)}><X size={17}/></button></header>
         <form onSubmit={save}>
-          <div className="employee-profile-form-grid">{fields.map(field => <label key={field.key}>{t(field.label)}<input required={["name", "department", "company", "shiftStart", "shiftEnd"].includes(field.key)} type={field.type || "text"} maxLength={200} value={String(draft[field.key] || "")} onChange={event => setDraft(p => ({ ...p, [field.key]: event.target.value }))}/></label>)}</div>
+          <div className="employee-profile-form-grid">{fields.map(field => <label key={field.key}>{t(field.label)}{field.options ? <select required={["department", "company", "shiftCode"].includes(field.key)} value={String(draft[field.key] || "")} onChange={event => setDraft(p => ({ ...p, [field.key]: event.target.value }))}><option value="">{t("Select an option")}</option>{[...new Set([...field.options, String(draft[field.key] || "")].filter(Boolean))].map(option => <option key={option} value={option}>{option}</option>)}</select> : <input required={["name", "shiftStart", "shiftEnd"].includes(field.key)} type={field.type || "text"} maxLength={200} value={String(draft[field.key] || "")} onChange={event => setDraft(p => ({ ...p, [field.key]: event.target.value }))}/>}</label>)}</div>
           {error && <p className="employee-profile-error" role="alert">{error}</p>}
           <footer><button type="button" className="button calendar-cancel" disabled={busy} onClick={() => setEditing(false)}>{t("Cancel")}</button><button type="submit" className="button primary" disabled={busy}><Check size={16}/>{busy ? t("Saving…") : t("Save changes")}</button></footer>
         </form>

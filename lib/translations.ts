@@ -1,5 +1,6 @@
 // UI copy only. Employee names, imported values and free-form notes are not translated.
 const entries = `
+ยอดสรุป|Totals
 ภาพหลักฐานเต็ม|Full evidence image
 ปิดภาพ|Close image
 เปิดภาพเต็ม|Open full image
@@ -1017,6 +1018,7 @@ export const thai: Record<string, string> = {
   "Shift starts": "เวลาเริ่มกะ",
   "Shift ends": "เวลาเลิกกะ",
   "Contract": "สัญญาจ้าง",
+  "Select an option": "เลือกข้อมูล",
   "Add employee details with Edit profile": "กดแก้ไขข้อมูลเพื่อเพิ่มรายละเอียดพนักงาน",
   "Uploading photo": "กำลังอัปโหลดรูป",
   "Save changes": "บันทึกการเปลี่ยนแปลง",

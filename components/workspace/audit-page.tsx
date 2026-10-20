@@ -18,12 +18,13 @@ export default function AuditPage() {
     () =>
       data.audit.filter(
         (a) =>
+          !(a.key === "IMPORT" && a.reason.startsWith("Service TXT import:")) &&
           (!date || a.key.endsWith("|" + date)) &&
           `${a.key} ${employees.get(a.key.split("|")[0]) || ""} ${a.actor} ${a.reason}`
             .toLowerCase()
             .includes(search.toLowerCase()),
       ),
-    [data.audit, search, date, employees],
+      [data.audit, search, date, employees],
   );
   const currentPage = Math.min(page, Math.max(1, Math.ceil(rows.length / 25)));
   return (

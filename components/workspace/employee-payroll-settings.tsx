@@ -6,11 +6,11 @@ import { useWorkspace } from "./provider";
 import type { PayrollSettings } from "@/lib/payroll-settings";
 import { payableDailyWage, wageServicePercent } from "@/lib/payroll-settings";
 
-export default function EmployeePayrollSettings({ employeeId, month }: { employeeId: string; month: string }) {
+export default function EmployeePayrollSettings({ employeeId, month, compact = false }: { employeeId: string; month: string; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const { getLocale } = useTranslation();
   const title = getLocale().startsWith("en") ? "Employee pay rate" : "ตั้งค่าเรทเงินรายบุคคล";
-  return <section className="employee-payroll-settings panel">
+  return <section className={`employee-payroll-settings${compact ? " employee-payroll-settings-compact" : " panel"}`}>
     <button type="button" className="button" aria-expanded={open} onClick={() => setOpen(!open)}>{title}</button>
     {open && <RateForm key={`${employeeId}|${month}`} employeeId={employeeId} month={month} />}
   </section>;
