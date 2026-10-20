@@ -83,6 +83,7 @@ export function calculatePayroll(
         date: string;
         code: string;
         status: string;
+        missing?: boolean;
         approved: boolean;
         hours: ReturnType<typeof emptyOT>;
         departmentAllowance: number;
@@ -205,6 +206,7 @@ export function calculatePayroll(
       date: s.date,
       code: s.shift_code,
       status: r.status,
+      missing: r.missing,
       approved: r.approved,
       hours: r.rawOT,
       departmentAllowance: departmentPay,

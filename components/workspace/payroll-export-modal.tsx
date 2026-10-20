@@ -124,7 +124,12 @@ export default function PayrollExportModal({
                 {t("กรุณาตรวจสอบรายการสแกนไม่ครบก่อนส่งออก")}{" "}
                 {incompleteRows
                   .slice(0, 5)
-                  .map((row) => `${row.id} ${row.name} (${row.missing})`)
+                  .map((row) => {
+                    const dates = [...new Set(
+                      row.days.filter((day) => day.missing ?? day.status === "MISSING").map((day) => day.date),
+                    )];
+                    return `${row.id} ${row.name} (${row.missing}: ${dates.join(", ") || t("วันที่ไม่ระบุ")})`;
+                  })
                   .join(", ")}
                 {incompleteRows.length > 5 &&
                   ` ${t("และอีก")} ${incompleteRows.length - 5} ${t("คน")}`}
