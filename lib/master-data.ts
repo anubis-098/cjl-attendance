@@ -15,6 +15,23 @@ export type EmployeeRow = {
   issue: string;
 };
 
+function sameMasterShift(
+  a: EmployeeRow["shift_data"],
+  b: EmployeeRow["shift_data"],
+) {
+  if (!a || !b) return a === b;
+  return (
+    a.emp_id === b.emp_id &&
+    a.device_emp_id === b.device_emp_id &&
+    a.department === b.department &&
+    a.source_department === b.source_department &&
+    a.agency === b.agency &&
+    a.shift_code === b.shift_code &&
+    a.shift_start === b.shift_start &&
+    a.shift_end === b.shift_end
+  );
+}
+
 export function normalizeMasterDate(raw: unknown, formatted = "") {
   let year: number, month: number, day: number;
   if (typeof raw === "number" && Number.isFinite(raw)) {
@@ -96,8 +113,9 @@ export async function readEmployeeFile(file: File): Promise<EmployeeRow[]> {
       const duplicates = JSON.parse(old.source_data.__duplicate_rows || "[]");
       duplicates.push({ row: i + 1, data: source });
       old.source_data.__duplicate_rows = JSON.stringify(duplicates);
-      const conflict =
-        JSON.stringify(old.shift_data) !== JSON.stringify(item.shift_data);
+      // Duplicate rows may differ only in display-name formatting (such as
+      // an honorific). Keep the usable plan unless scheduling fields conflict.
+      const conflict = !sameMasterShift(old.shift_data, item.shift_data);
       old.issue = [
         old.issue,
         `รหัสซ้ำแถว ${i + 1}: เก็บข้อมูลต้นฉบับทั้งสองแถวไว้${conflict ? " · ข้อมูลกะขัดแย้ง ไม่ใช้คำนวณ" : " · ข้อมูลกะตรงกัน"}`,

@@ -229,6 +229,42 @@ test("duplicate employees differing only by department alias stay usable and pre
   assert.equal(rows[1].source_data["แผนก"], "Frozen CDC");
   assert.equal(rows[2].shift_data, null);
 });
+
+test("duplicate master rows with only a name honorific difference keep the shared shift usable", async () => {
+  const records = [
+    ["BE001269", "นางสาวณัฐธันยา โพนศรี"],
+    ["BE001269", "ณัฐธันยา โพนศรี"],
+  ].map(([id, name], i) => {
+    const row: Record<string, string> = {
+      ลำดับ: String(i + 1),
+      รหัส: id,
+      "ชื่อ-นามสกุล": name,
+      แผนก: "CDC Dry Food Operation",
+      Section: "Dry",
+      กะทำงาน: "D",
+      เวลาทำงาน: "09.00-18.00",
+      "First Time": "09.00",
+      "Last Time": "18.00",
+      Sup: "Beyond",
+    };
+    return MASTER_HEADERS.map((header) => row[header] || "");
+  });
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet([[...MASTER_HEADERS], ...records]),
+    "Master data",
+  );
+  const [employee] = await readEmployeeFile(
+    new File([XLSX.write(workbook, { type: "array", bookType: "xlsx" })], "duplicate-name.xlsx"),
+  );
+  assert.equal(employee.shift_data?.shift_start, "09:00");
+  assert.equal(employee.shift_data?.shift_end, "18:00");
+  assert.equal(employee.shift_data?.emp_name, "นางสาวณัฐธันยา โพนศรี");
+  assert.equal(employee.issue.includes("ข้อมูลกะขัดแย้ง"), false);
+  assert.equal(JSON.parse(employee.source_data.__duplicate_rows).length, 1);
+});
+
 test("master import preserves source headers and duplicate source rows", async () => {
   const rows = await readEmployeeFile(
     new File(
@@ -266,6 +302,11 @@ test("latest master workbook imports successfully", async () => {
   const rows = await readEmployeeFile(new File([readFileSync("examples/Master Name list 1.xlsx")], "latest.xlsx"));
   assert.ok(rows.length > 300);
   assert.equal(rows.find((row) => row.employee_id === "DF068273")?.shift_data?.shift_start, "06:00");
+  const updatedRows = await readEmployeeFile(new File([readFileSync("examples/Master_Name_List_update_19-oct-26.xlsx")], "updated.xlsx"));
+  const affected = updatedRows.find((row) => row.employee_id === "BE001269");
+  assert.equal(affected?.shift_data?.shift_start, "09:00");
+  assert.equal(affected?.shift_data?.shift_end, "18:00");
+  assert.equal(affected?.issue.includes("ข้อมูลกะขัดแย้ง"), false);
 });
 
 test("midnight represented as 24.00 produces an active overnight master shift", async () => {
