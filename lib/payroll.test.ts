@@ -116,6 +116,43 @@ import {
   validatePayrollSettings,
 } from "./payroll-settings";
 
+test("manually paired overnight punches are not reused as the next master shift's missing entry", () => {
+  const shift = (date: string): Shift => ({
+    emp_id: "BE000028",
+    device_emp_id: "BE000028",
+    emp_name: "Test employee",
+    agency: "Beyond",
+    department: "Fresh Equipment Cleaning",
+    date,
+    shift_code: "M",
+    shift_start: "07:00",
+    shift_end: "16:00",
+    requested_ot_hrs: 0,
+    ot_task_target: "",
+  });
+  const data: Data = {
+    shifts: [shift("2026-10-03"), shift("2026-10-04")],
+    punches: [
+      { device_emp_id: "BE000028", punch_timestamp: "2026-10-03 18:33:00", punch_type: "UNKNOWN" },
+      { device_emp_id: "BE000028", punch_timestamp: "2026-10-04 06:02:00", punch_type: "UNKNOWN" },
+    ],
+    reviews: {
+      "BE000028|2026-10-03": {
+        manualPair: true,
+        inTime: "2026-10-03T18:33",
+        outTime: "2026-10-04T06:02",
+        approved: false,
+        overBudget: false,
+        note: "",
+      },
+    },
+    audit: [],
+  };
+  const report = calculatePayroll(data, "2026-10", "calendar", undefined, DEFAULT_PAYROLL_SETTINGS);
+  assert.equal(report.rows[0].missing, 0);
+  assert.equal(report.rows[0].days.find((day) => day.date === "2026-10-04")?.status, "ABSENT");
+});
+
 test("payroll export separates confirmed and pending amounts, selects columns and keeps incomplete totals unknown", () => {
   const report: PayrollReport = {
     period: { from: "2026-08-26", to: "2026-09-25" },

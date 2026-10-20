@@ -8,6 +8,7 @@ import {
   holidayLabels,
   isoLocal,
   keyOf,
+  manualPairScansByEmployee,
   reconcile,
 } from "@/lib/engine";
 import { audit, labels, number } from "@/lib/workspace";
@@ -31,9 +32,13 @@ export default function ReviewDrawer({
   const { t, getLocale } = useTranslation();
   const { data, setData, setToast, punchesByEmployee } = useWorkspace();
   const punches = punchesByEmployee.get(active.device_emp_id) || [];
+  const manuallyPairedScans = useMemo(
+    () => manualPairScansByEmployee(data.reviews),
+    [data.reviews],
+  );
   const result = useMemo(
-    () => reconcile(active, punches, data.reviews[keyOf(active)]),
-    [active, punches, data.reviews],
+    () => reconcile(active, punches, data.reviews[keyOf(active)], manuallyPairedScans.get(active.emp_id)),
+    [active, punches, data.reviews, manuallyPairedScans],
   );
   const [reason, setReason] = useState(""),
     [error, setError] = useState("");
@@ -89,8 +94,8 @@ export default function ReviewDrawer({
     outTime: data.reviews[keyOf(active)]?.outTime || (result.outMs === undefined ? "" : isoLocal(result.outMs)),
   }));
   const preview = useMemo(
-    () => reconcile(active, punches, draft),
-    [active, punches, draft],
+    () => reconcile(active, punches, draft, manuallyPairedScans.get(active.emp_id)),
+    [active, punches, draft, manuallyPairedScans],
   );
   useDialog(onClose, evidenceBusy);
   async function save() {
@@ -113,6 +118,7 @@ export default function ReviewDrawer({
       active,
       punchesByEmployee.get(active.device_emp_id) || [],
       draft,
+      manuallyPairedScans.get(active.emp_id),
     );
     if (
       draft.approved &&

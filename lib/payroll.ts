@@ -2,6 +2,7 @@ import {
   OT_RATES,
   emptyOT,
   keyOf,
+  manualPairScansByEmployee,
   reconcile,
   type Data,
   type OTRate,
@@ -58,6 +59,7 @@ export function calculatePayroll(
 ) {
   const period = payrollPeriod(month, cycle);
   const rates = new Map(book?.rows.map((r) => [r.id, r]) || []);
+  const manuallyPairedScans = manualPairScansByEmployee(data.reviews);
   const punches = new Map<string, Data["punches"]>();
   for (const p of data.punches) {
     const list = punches.get(p.device_emp_id) || [];
@@ -136,6 +138,7 @@ export function calculatePayroll(
       s,
       punches.get(s.device_emp_id) || [],
       data.reviews[keyOf(s)],
+      manuallyPairedScans.get(s.emp_id),
     );
     const dayCode = normalizeDayCode(s.shift_code);
     if (r.holiday || leaveCodes.some((code) => code === dayCode))

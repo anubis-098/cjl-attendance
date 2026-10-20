@@ -145,6 +145,18 @@ export function migrateCalculation(data: Data): Data {
   };
 }
 export const keyOf = (s: Shift) => `${s.emp_id}|${s.date}`;
+export function manualPairScansByEmployee(reviews: Record<string, Review>) {
+  const byEmployee = new Map<string, Set<number>>();
+  for (const [key, review] of Object.entries(reviews)) {
+    if (!review.manualPair) continue;
+    const employeeId = key.slice(0, key.lastIndexOf("|"));
+    const scans = byEmployee.get(employeeId) || new Set<number>();
+    for (const time of [review.inTime, review.outTime])
+      if (time) scans.add(punchTime(time));
+    byEmployee.set(employeeId, scans);
+  }
+  return byEmployee;
+}
 export const stamp = (date: string, time: string) =>
   Date.parse(`${date}T${time}:00+07:00`);
 export const isoLocal = (ms: number) =>
@@ -152,7 +164,12 @@ export const isoLocal = (ms: number) =>
 export const clock = (ms?: number) =>
   ms === undefined ? "—" : isoLocal(ms).slice(11);
 // Each rate needs at least one hour, then credits completed half-hour blocks.
-export function reconcile(s: Shift, punches: Punch[], review?: Review) {
+export function reconcile(
+  s: Shift,
+  punches: Punch[],
+  review?: Review,
+  manuallyPairedScans: ReadonlySet<number> = new Set(),
+) {
   const code = normalizeDayCode(s.shift_code);
   const nonWorking = nonWorkingCodes.has(code);
   const { start, end, from, to } = shiftWindow(s, s.date);
@@ -163,7 +180,7 @@ export function reconcile(s: Shift, punches: Punch[], review?: Review) {
       ...p,
       ms: punchTime(p.punch_timestamp),
     }))
-    .filter((p) => !ignoredScans.has(p.ms))
+    .filter((p) => !ignoredScans.has(p.ms) && !manuallyPairedScans.has(p.ms))
     .sort((a, b) => a.ms - b.ms);
   const logs = allLogs.filter(
     (p) =>
