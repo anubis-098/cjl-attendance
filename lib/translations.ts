@@ -1,5 +1,35 @@
 // UI copy only. Employee names, imported values and free-form notes are not translated.
 const entries = `
+เลือกไฟล์พนักงาน|Choose employee file
+แก้ไข CSV ใน Excel แล้วนำกลับเข้าเพื่ออัปเดตข้อมูลพนักงาน|Edit the CSV in Excel, then import it again to update employee records.
+Import & Export files|นำเข้าและนำออกไฟล์
+Import Master data|นำเข้าข้อมูล Master
+Upload an Excel or CSV file to add or update employee records.|อัปโหลด Excel หรือ CSV เพื่อเพิ่มหรือปรับปรุงข้อมูลพนักงาน
+Choose an Excel or CSV file. Columns are matched by header, so their order can change.|เลือกไฟล์ Excel หรือ CSV ระบบจับคู่คอลัมน์จาก Header จึงสลับลำดับคอลัมน์ได้
+Import method|วิธีนำเข้าข้อมูล
+Add or update employees|เพิ่มหรืออัปเดตข้อมูลพนักงาน
+Replace employee list|แทนที่รายชื่อพนักงาน
+Add or update records and keep employees missing from the file. Existing shift edits, scan pairs, OT confirmations, and break settings are preserved.|เพิ่มหรืออัปเดตข้อมูล และเก็บพนักงานเดิมที่ไม่มีในไฟล์ไว้ โดยคงข้อมูลแก้กะ คู่สแกน การยืนยัน OT และการหักพักเดิม
+Replace the employee list while preserving existing attendance periods, scan pairs, shift edits, OT confirmations, break settings, and history.|แทนที่รายชื่อพนักงาน โดยคงคาบเวลาทำงาน คู่สแกน การแก้กะ การยืนยัน OT การหักพัก และประวัติเดิมไว้
+Employees detected|จำนวนพนักงานที่ตรวจพบ
+Rows to review|แถวที่ควรตรวจสอบ
+Duplicate rows in file|แถวรหัสซ้ำในไฟล์
+Confirm employee import|ยืนยันนำเข้าพนักงาน
+Choose an All-attlogd*.txt file exported from the fingerprint device.|เลือกไฟล์ All-attlogd*.txt ที่ส่งออกจากเครื่องสแกนนิ้ว
+Append records from the file, skip duplicates, and keep existing scans. Recheck only shifts with newly imported scans.|เพิ่มข้อมูลจากไฟล์ ข้ามรายการซ้ำ และเก็บข้อมูลสแกนเดิมไว้ ตรวจสอบใหม่เฉพาะกะที่มีสแกนเพิ่ม
+Export employee data|ส่งออกข้อมูลพนักงาน
+Export scope|ขอบเขตข้อมูลส่งออก
+All employees (default)|พนักงานทั้งหมด (ค่าเริ่มต้น)
+Use current filters|ตามตัวกรองปัจจุบัน
+Exports rows matching the current search and filters.|ส่งออกเฉพาะรายการที่ตรงกับคำค้นหาและตัวกรองปัจจุบัน
+Download all database records as CSV with the exact Master headers, ready to edit in Excel and import again.|ดาวน์โหลดข้อมูลทั้งหมดเป็น CSV โดยใช้ Header ตรงกับ Master สำหรับแก้ไขใน Excel แล้วนำกลับเข้าได้
+Exports all employees, regardless of current filters.|ส่งออกพนักงานทั้งหมด โดยไม่ขึ้นกับตัวกรองที่เลือก
+Export CSV|ส่งออก CSV
+Preparing CSV...|กำลังเตรียม CSV...
+Employee CSV exported|ส่งออก CSV พนักงานแล้ว
+Employee CSV export failed|ส่งออก CSV พนักงานไม่สำเร็จ
+Master shift time is invalid. This calendar shows actual fingerprint scans only; payroll and OT are not calculated from these entries.|เวลาใน Master ไม่ถูกต้อง ปฏิทินนี้แสดงเฉพาะเวลาสแกนจริง และไม่นำรายการนี้ไปคำนวณเงินหรือ OT
+Master shift time invalid · Actual scans only|เวลา Master ไม่ถูกต้อง · แสดงสแกนจริงเท่านั้น
 ยอดสรุป|Totals
 ภาพหลักฐานเต็ม|Full evidence image
 ปิดภาพ|Close image
@@ -957,16 +987,20 @@ Night · ค่ากะดึก / วัน|Night shift allowance / day
 ยืนยันเปลี่ยนกะ|Confirm shift changes
 ข้อมูลต้นฉบับ:|Original data:
 `;
-export const english: Record<string, string> = Object.fromEntries(
+const translationPairs =
   entries
     .trim()
     .split("\n")
     .map((line) => {
       const i = line.indexOf("|");
-      return [line.slice(0, i), line.slice(i + 1)];
-    }),
-);
+      const left = line.slice(0, i), right = line.slice(i + 1);
+      // Older entries are Thai | English; some newer entries were added in reverse.
+      return /[\u0e00-\u0e7f]/.test(right) && !/[\u0e00-\u0e7f]/.test(left)
+        ? [right, left] : [left, right];
+    });
+export const english: Record<string, string> = Object.fromEntries(translationPairs);
 export const thai: Record<string, string> = {
+  ...Object.fromEntries(translationPairs.map(([th, en]) => [en, th])),
   "Search employees by ID, name, or agency": "ค้นหารหัสพนักงาน ชื่อ หรือ Agency",
   "Clear filter": "ล้างตัวกรอง",
   "Go back": "ย้อนกลับ",
@@ -1002,6 +1036,7 @@ export const thai: Record<string, string> = {
   "Departments with most incomplete scans": "แผนกที่สแกนไม่ครบสูงสุด",
   "Employees with most incomplete scans": "พนักงานที่สแกนไม่ครบสูงสุด",
   "No incomplete scans in this period": "ไม่พบการสแกนไม่ครบในช่วงนี้",
+  "Other departments": "แผนกอื่น ๆ",
   "Unknown department": "ไม่ระบุแผนก",
   "Unknown company": "ไม่ระบุบริษัท",
   "Employee profile photo": "รูปโปรไฟล์พนักงาน",

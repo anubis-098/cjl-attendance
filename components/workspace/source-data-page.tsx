@@ -11,7 +11,7 @@ import { useWorkspace } from "./provider";
 import Pagination from "./pagination";
 import FingerprintServicePanel from "./fingerprint-service-panel";
 import type { FingerprintImportSummary } from "@/lib/fingerprint-import";
-import { FileUp, ChevronDown, RotateCcw } from "lucide-react";
+import { FileUp, FileDown, ChevronDown, RotateCcw, Download } from "lucide-react";
 import EmployeeCreateForm from "./employee-create-form";
 import CompanyHolidayPanel from "./company-holiday-panel";
 import UploadProgress from "./upload-progress";
@@ -30,6 +30,8 @@ export default function SourceDataPage({
     [search, setSearch] = useState(""),
     [file, setFile] = useState<File | null>(null),
     [busy, setBusy] = useState(false),
+    [exporting, setExporting] = useState(false),
+    [exportScope, setExportScope] = useState<"all" | "filtered">("all"),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [version, setVersion] = useState(0);
@@ -149,6 +151,39 @@ export default function SourceDataPage({
     setEmployeePreview(null);
     if (fileInput.current) fileInput.current.value = "";
   }
+  async function exportEmployees() {
+    if (exporting) return;
+    setExporting(true);
+    setError("");
+    try {
+      const query = new URLSearchParams({ scope: exportScope });
+      if (exportScope === "filtered") {
+        query.set("search", globalEmployeeSearch.trim() || search);
+        for (const [key, value] of Object.entries(employeeFilters)) {
+          query.set(key, key === "review" ? value : JSON.parse(value));
+        }
+      }
+      const response = await fetch(`/api/employees/export?${query}`, { cache: "no-store" });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw Error(body.error || "Employee CSV export failed");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = response.headers.get("content-disposition")?.match(/filename="([^"]+)"/)?.[1] || "employee_master.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setToast(t("Employee CSV exported"));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Employee CSV export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
   return (
     <>
       <div className="page-heading">
@@ -167,39 +202,35 @@ export default function SourceDataPage({
       </div>
       {!master && <FingerprintServicePanel />}
       <details className="panel employee-tools" open={master ? undefined : true}>
-        <summary><span className="employee-tool-icon"><FileUp size={21}/></span><span>{t(master ? "Import File" : "นำเข้าไฟล์ด้วยตนเอง")}</span><ChevronDown size={18} className="employee-tool-chevron"/></summary>
-        <div className="employee-tool-body"><section className="source-import">
-        <p>
-          {t(
-            master
-              ? "เลือก Excel หรือ CSV · จับคู่ตามชื่อคอลัมน์ สลับลำดับหรือเพิ่มคอลัมน์ได้"
-              : "เลือกไฟล์ All-attlogd*.txt จากเครื่องสแกนนิ้ว",
-          )}
+        <summary><span className="employee-tool-icon"><FileUp size={21}/></span><span>{t(master ? "Import & Export files" : "นำเข้าไฟล์ด้วยตนเอง")}</span><ChevronDown size={18} className="employee-tool-chevron"/></summary>
+        <div className="employee-tool-body"><div className={master ? "employee-import-export-grid" : "employee-transfer-single"}><section className="source-import employee-import-card">
+        {master && <header className="employee-transfer-heading"><span className="employee-transfer-icon import"><FileUp size={18}/></span><div><h2>{t("Import Master data")}</h2><p>{t("Upload an Excel or CSV file to add or update employee records.")}</p></div></header>}
+        <p className="employee-transfer-help">
+          {t(master ? "Choose an Excel or CSV file. Columns are matched by header, so their order can change." : "Choose an All-attlogd*.txt file exported from the fingerprint device.")}
         </p>
         {master && (
-          <label className="field">
-            {t("วิธีนำเข้าข้อมูลพนักงาน")}
+          <label className="field employee-transfer-control">
+            {t("Import method")}
             <select
               value={employeeMode}
               disabled={busy}
               onChange={(e) => setEmployeeMode(e.target.value)}
             >
-              <option value="merge">{t("เพิ่ม/อัปเดตข้อมูล")}</option>
-              <option value="replace">{t("แทนที่รายชื่อพนักงาน")}</option>
+              <option value="merge">{t("Add or update employees")}</option>
+              <option value="replace">{t("Replace employee list")}</option>
             </select>
           </label>
         )}
-        <p>
-          {t(
-            master
-              ? employeeMode === "merge"
-                ? "เพิ่มหรืออัปเดตพนักงานตามไฟล์ โดยเก็บพนักงานเดิมที่ไม่มีในไฟล์ไว้ และเก็บการเปลี่ยนกะ การจับคู่เข้าออก การยืนยัน OT และการหักพักเดิม"
-                : "แทนที่รายชื่อพนักงานตามไฟล์ แต่เก็บคาบเวลา การจับคู่เข้าออก การเปลี่ยนกะ การยืนยัน OT การหักพัก และประวัติเดิมไว้"
-              : "เพิ่มข้อมูลต่อจากทุกไฟล์เดิม ข้ามรายการซ้ำ เก็บสแกนเก่าไว้จนกว่าผู้พัฒนาจะสั่งลบ เปิดผลตรวจสอบใหม่เฉพาะกะที่มีสแกนเพิ่ม",
-          )}
+        <p className="employee-transfer-note">
+          {t(master
+            ? employeeMode === "merge"
+              ? "Add or update records and keep employees missing from the file. Existing shift edits, scan pairs, OT confirmations, and break settings are preserved."
+              : "Replace the employee list while preserving existing attendance periods, scan pairs, shift edits, OT confirmations, break settings, and history."
+            : "Append records from the file, skip duplicates, and keep existing scans. Recheck only shifts with newly imported scans.")}
         </p>
         <input
           type="file"
+          hidden={master}
           ref={fileInput}
           aria-label={t(
             master ? "Import employee file" : "Import fingerprint file",
@@ -208,11 +239,12 @@ export default function SourceDataPage({
           disabled={busy}
           onChange={(e) => { const selected = e.target.files?.[0]; setError(""); setEmployeePreview(null); if (selected) void upload(selected, master); }}
         />
+        {master && <div className="employee-export-footer"><span>Excel / CSV</span><button type="button" className="button primary employee-transfer-action" disabled={busy} onClick={() => fileInput.current?.click()}><FileUp size={16}/>{t("Choose employee file")}</button></div>}
         {(file || lastFileName) && progress !== null && <UploadProgress fileName={lastFileName} progress={progress} busy={busy} onDiscard={discardSelectedFile} />}
         {master && employeePreview && file && !busy && <div className="employee-import-confirm" role="status">
-          <p>{t("พนักงานที่ตรวจพบ")} <b>{employeePreview.employeeCount.toLocaleString()}</b> · {t("แถวที่ควรตรวจสอบ")} <b>{employeePreview.issueCount.toLocaleString()}</b> · {t("แถวรหัสซ้ำในไฟล์")} <b>{employeePreview.duplicateRows.toLocaleString()}</b></p>
-          <button type="button" className="button calendar-confirm" disabled={busy} onClick={() => void upload(file)}>
-            {t("ยืนยันนำเข้าพนักงาน")}
+          <p>{t("Employees detected")} <b>{employeePreview.employeeCount.toLocaleString()}</b> · {t("Rows to review")} <b>{employeePreview.issueCount.toLocaleString()}</b> · {t("Duplicate rows in file")} <b>{employeePreview.duplicateRows.toLocaleString()}</b></p>
+          <button type="button" className="button employee-transfer-action employee-import-confirm-action" disabled={busy} onClick={() => void upload(file)}>
+            {t("Confirm employee import")}
           </button>
         </div>}
         {error && (
@@ -220,7 +252,15 @@ export default function SourceDataPage({
             {t(error)}
           </p>
         )}
-      </section></div></details>
+      </section>
+      {master && <section className="employee-export-card">
+        <header className="employee-transfer-heading"><span className="employee-transfer-icon export"><FileDown size={18}/></span><div><h2>{t("Export employee data")}</h2><p>{t("Download all database records as CSV with the exact Master headers, ready to edit in Excel and import again.")}</p></div></header>
+        <p className="employee-transfer-help">{t("Edit the CSV in Excel, then import it again to update employee records.")}</p>
+        <div className="employee-export-options"><label className="employee-export-scope">{t("Export scope")}<select value={exportScope} onChange={(event) => setExportScope(event.target.value as "all" | "filtered")}><option value="all">{t("All employees (default)")}</option><option value="filtered">{t("Use current filters")}</option></select></label></div>
+        <p className="employee-transfer-note">{t(exportScope === "all" ? "Exports all employees, regardless of current filters." : "Exports rows matching the current search and filters.")}</p>
+        <div className="employee-export-footer"><span>CSV</span><button type="button" className="button primary employee-transfer-action" disabled={exporting || busy} onClick={() => void exportEmployees()}>{exporting ? <span className="upload-spinner" aria-hidden="true"/> : <Download size={16}/>} {t(exporting ? "Preparing CSV..." : "Export CSV")}</button></div>
+      </section>}
+      </div></div></details>
       {master && <EmployeeCreateForm onCreated={() => {setPage(1);setSearch("");setEmployeeFilters({});setVersion(v=>v+1);}} />}
       {master && <CompanyHolidayPanel />}
       {!master && importResult && (
