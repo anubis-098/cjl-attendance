@@ -3,7 +3,7 @@ import { useTranslation } from "@/lib/i18n";
 import { clock, isoLocal, type Shift } from "@/lib/engine";
 import { actualCardStatus, type ActualInterval } from "@/lib/actual-timeline";
 import OTInvestigate from "./ot-investigate";
-import { Check, Clock3, Timer, CircleAlert } from "lucide-react";
+import { Check, Circle, Clock, CircleAlert } from "lucide-react";
 import { workTime } from "@/lib/work-time";
 import { shiftWindow } from "@/lib/shift-window";
 
@@ -26,7 +26,8 @@ export default function ActualCard({
       <small>{t("ยังไม่มีคู่")}</small>
     </span>
   );
-  const monitoredHours = actualCardStatus(actual, shift, deductOTBreak) === "actual-ot"
+  const status = actualCardStatus(actual, shift, deductOTBreak, approved);
+  const monitoredHours = status === "actual-ot"
     && actual.inMs !== undefined && actual.outMs !== undefined
     ? workTime(actual.inMs, actual.outMs, deductOTBreak, shiftWindow(shift, shift.date)).overtimeHours : 0;
   return (
@@ -37,7 +38,8 @@ export default function ActualCard({
         <span>–</span>
         <b>{actual.outMs === undefined ? "--:--" : clock(actual.outMs)}</b>
       </span>
-      <small>
+      <small className="actual-status-label">
+        {status === "actual-ot" ? <Clock size={12} aria-hidden="true" /> : status === "actual" ? <Circle size={9} fill="currentColor" strokeWidth={0} aria-hidden="true" /> : null}
         {t(
           actual.estimated
             ? "สแกนยังไม่มีคู่"
@@ -47,7 +49,9 @@ export default function ActualCard({
         )}
       </small>
       <small className="actual-master-time">
-        {t("Master")}: {shift.shift_code} {shift.shift_start}–{shift.shift_end}
+        {shift.source_day_code === "ACTUAL_ONLY"
+          ? t("Master shift time invalid · Actual scans only")
+          : <>{t("Master")}: {shift.shift_code} {shift.shift_start}–{shift.shift_end}</>}
       </small>
       {(actual.estimated || actual.uncertain) && (
         <span className="missing-check" aria-label={t("รอตรวจสอบ")}>
@@ -69,12 +73,12 @@ export function ActualCalendarLegend({ compact = false }: { compact?: boolean })
     <div className={`actual-calendar-legend status-legend ${compact ? "status-legend-compact" : ""}`}
       role="group" aria-label={t("สถานะคาบเวลาสแกน")}>
       {[
-        { status: "normal", label: "งานปกติ", Icon: Clock3 },
-        { status: "ot", label: "มี OT", Icon: Timer },
+        { status: "normal", label: "งานปกติ", Icon: Circle },
+        { status: "ot", label: "มี OT", Icon: Clock },
         { status: "approved", label: "ยืนยันแล้ว", Icon: Check },
         { status: "missing", label: "สแกนไม่ครบ / กำกวม", Icon: CircleAlert },
       ].map(({ status, label, Icon }) => <span className="status-legend-item" key={status}>
-        <span className={`legend-swatch legend-${status}`} aria-hidden="true"><Icon size={14} strokeWidth={2.5} /></span>
+        <span className={`legend-swatch legend-${status}`} aria-hidden="true"><Icon size={status === "normal" ? 10 : 14} fill={status === "normal" ? "currentColor" : "none"} strokeWidth={status === "normal" ? 0 : 2.5} /></span>
         <span>{t(label)}</span>
       </span>)}
     </div>

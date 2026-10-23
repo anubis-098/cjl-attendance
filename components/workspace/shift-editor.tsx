@@ -10,6 +10,7 @@ export default function ShiftEditor({
   saving,
   reason,
   onConfirm,
+  onReasonChange,
   onSelectAll,
   onClear,
 }: {
@@ -22,6 +23,7 @@ export default function ShiftEditor({
     change: Omit<ShiftOverride, "reason"> | null,
     reason: string,
   ) => Promise<void>;
+  onReasonChange: (reason: string) => void;
   onSelectAll: () => void;
   onClear: () => void;
 }) {
@@ -132,6 +134,20 @@ export default function ShiftEditor({
             "บันทึกแล้วจะจับสแกนใหม่ ล้างเวลาเข้า–ออกที่แก้ด้วยมือในวันที่เลือก และเปิดการยืนยันของวันนั้นกับวันข้างเคียงให้ตรวจสอบใหม่ เก็บค่าเดิมไว้ในประวัติ",
           )}
         </p>
+        <label
+          className={`shift-reason-field${reason.trim() ? "" : " is-empty"}`}
+        >
+          {t("เหตุผลเปลี่ยนกะ")}
+          <input
+            aria-label={t("เหตุผลเปลี่ยนกะ")}
+            aria-invalid={!reason.trim()}
+            required
+            maxLength={1000}
+            value={reason}
+            onChange={(event) => onReasonChange(event.target.value)}
+            placeholder={t("เช่น เปลี่ยนกะตามที่หัวหน้ายืนยัน")}
+          />
+        </label>
         <div className="month-controls">
           <button type="button" className="button" onClick={onSelectAll}>
             {t("เลือกทุกวันในเดือน")}

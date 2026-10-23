@@ -8,12 +8,14 @@ export function visibleWorkspace<T extends { data: Data; employees: { employee_i
   const own = account.role === "employee";
   const matches = (id: string) => !own || (!!account.employeeId && id === account.employeeId);
   const shifts = workspace.data.shifts.filter(s => matches(s.emp_id));
-  const devices = new Set(shifts.map(s => s.device_emp_id));
+  const actualOnlyShifts = (workspace.data.actualOnlyShifts || []).filter(s => matches(s.emp_id));
+  const devices = new Set([...shifts, ...actualOnlyShifts].map(s => s.device_emp_id));
   const employees = workspace.employees.filter(e => matches(e.employee_id)).map(e => ({ employee_id: e.employee_id }));
   // Explicit allowlist: never send payroll books, settings, raw import fields or audit payloads.
   const data: Data = {
     calculationVersion: workspace.data.calculationVersion,
     shifts,
+    actualOnlyShifts,
     punches: workspace.data.punches.filter(p => !own || devices.has(p.device_emp_id)),
     reviews: Object.fromEntries(Object.entries(workspace.data.reviews).filter(([key]) => matches(key.split("|")[0]))),
     audit: [],

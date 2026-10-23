@@ -21,6 +21,7 @@ import Pagination from "./pagination";
 import SummaryCards from "./summary-cards";
 import { useAttendance } from "./use-attendance";
 const ReviewDrawer = dynamic(() => import("./review-drawer"));
+const DEPARTMENT_CHART_COLORS = ["#d95149", "#f18a62", "#f5b45f", "#72a8c8", "#5577bb", "#91ae83"];
 export default function RecordsPage({
   mode,
 }: {
@@ -80,9 +81,19 @@ export default function RecordsPage({
       employees.set(key, current);
     }
     const employeeRows = [...employees.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, 8);
-    const departmentRows = [...departments.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, 6);
-    return { employeeRows, departmentRows, incompleteCount, maxEmployee: Math.max(1, ...employeeRows.map((item) => item.count)), maxDepartment: Math.max(1, ...departmentRows.map((item) => item.count)) };
+    const rankedDepartments = [...departments.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    const departmentRows = rankedDepartments.slice(0, 5);
+    const otherDepartments = rankedDepartments.slice(5).reduce((sum, item) => sum + item.count, 0);
+    if (otherDepartments > 0) departmentRows.push({ name: t("Other departments"), count: otherDepartments });
+    return { employeeRows, departmentRows, incompleteCount, maxEmployee: Math.max(1, ...employeeRows.map((item) => item.count)) };
   }, [filtered, results, model.actualTimeline, mode, t]);
+  const departmentTotal = incompleteDashboard?.departmentRows.reduce((sum, item) => sum + item.count, 0) ?? 0;
+  let departmentOffset = 0;
+  const departmentGradient = incompleteDashboard?.departmentRows.map((item, index) => {
+    const from = departmentOffset;
+    departmentOffset += departmentTotal ? item.count / departmentTotal * 100 : 0;
+    return `${DEPARTMENT_CHART_COLORS[index % DEPARTMENT_CHART_COLORS.length]} ${from}% ${departmentOffset}%`;
+  }).join(", ") ?? "#edf1f5 0% 100%";
   useEffect(() => {
     setPage(1);
     setSelected([]);
@@ -169,13 +180,30 @@ export default function RecordsPage({
           <div className="incomplete-dashboard-grid">
             <div className="incomplete-bars">
               <h3>{t("Departments with most incomplete scans")}</h3>
-              {incompleteDashboard.departmentRows.length ? incompleteDashboard.departmentRows.map((item) => (
-                <div className="incomplete-bar-row" key={item.name}>
-                  <span className="incomplete-bar-label" title={item.name}>{item.name}</span>
-                  <span className="incomplete-bar-track"><span style={{ width: `${Math.max(6, item.count / incompleteDashboard.maxDepartment * 100)}%` }} /></span>
-                  <b>{t(item.count)}</b>
+              {incompleteDashboard.departmentRows.length ? (
+                <div className="incomplete-department-chart">
+                  <div
+                    className="incomplete-donut"
+                    role="img"
+                    aria-label={`${t("Departments with most incomplete scans")}: ${incompleteDashboard.departmentRows.map((item) => `${item.name} ${item.count}`).join(", ")}`}
+                    style={{ background: `conic-gradient(${departmentGradient})` }}
+                  >
+                    <div className="incomplete-donut-hole">
+                      <b>{t(departmentTotal)}</b>
+                      <span>{t("incomplete shifts")}</span>
+                    </div>
+                  </div>
+                  <div className="incomplete-donut-legend">
+                    {incompleteDashboard.departmentRows.map((item, index) => (
+                      <div className="incomplete-donut-legend-row" key={item.name}>
+                        <i style={{ background: DEPARTMENT_CHART_COLORS[index % DEPARTMENT_CHART_COLORS.length] }} />
+                        <span title={item.name}>{item.name}</span>
+                        <b>{t(item.count)}</b>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )) : <p className="incomplete-empty">{t("No incomplete scans in this period")}</p>}
+              ) : <p className="incomplete-empty">{t("No incomplete scans in this period")}</p>}
             </div>
             <div className="incomplete-bars incomplete-employee-bars">
               <h3>{t("Employees with most incomplete scans")}</h3>

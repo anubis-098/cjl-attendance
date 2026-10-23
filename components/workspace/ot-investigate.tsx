@@ -1,6 +1,7 @@
 "use client";
 import { useTranslation } from "@/lib/i18n";
 import { number } from "@/lib/workspace";
+import { Clock } from "lucide-react";
 
 export default function OTInvestigate({ hours }: { hours: number }) {
   const { t, getLocale } = useTranslation();
@@ -15,17 +16,7 @@ export default function OTInvestigate({ hours }: { hours: number }) {
       aria-label={t(label)}
       title={t(label)}
     >
-      <span
-        aria-hidden="true"
-        style={{
-          fontFamily: "serif",
-          fontSize: 14,
-          fontWeight: 700,
-          lineHeight: 1,
-        }}
-      >
-        {t("i")}
-      </span>
+      <Clock size={13} strokeWidth={2.5} aria-hidden="true" />
     </span>
   );
 }

@@ -44,6 +44,7 @@ function shiftForInterval(shifts: Shift[], interval: ActualInterval) {
 // Missing or ambiguous scans always take precedence over the OT colour.
 export function actualCardStatus(actual: ActualInterval, shift: Shift, deductOTBreak = false, approved = false) {
   if (actual.estimated || actual.uncertain) return "missing";
+  if (shift.source_day_code === "ACTUAL_ONLY") return "actual";
   if (approved) return "approved";
   const code = normalizeDayCode(shift.shift_code);
   if (nonWorkingCodes.has(code) || code === "OFF") return "actual";
@@ -319,8 +320,10 @@ export function buildActualTimeline(
     };
     for (const interval of pairActualScans(punches)) {
       const date = isoLocal(interval.start).slice(0, 10);
-      const s = shiftForInterval(ordered, interval) || byDate.get(date) ||
-        byDate.get(isoLocal(interval.inMs ?? interval.outMs!).slice(0, 10));
+      const s = ordered.every(shift => shift.source_day_code === "ACTUAL_ONLY")
+        ? byDate.get(date)
+        : shiftForInterval(ordered, interval) || byDate.get(date) ||
+          byDate.get(isoLocal(interval.inMs ?? interval.outMs!).slice(0, 10));
       if (s) attach(s, interval);
     }
     for (const { shift, interval } of corrected) attach(shift, interval);

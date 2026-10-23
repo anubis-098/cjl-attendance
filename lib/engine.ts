@@ -48,6 +48,8 @@ export type Audit = {
   after: string;
 };
 export type Data = {
+  /** Transient calendar anchors for scan-only employees with invalid Master times. */
+  actualOnlyShifts?: Shift[];
   evidenceImageCounts?: Record<string, number>;
   employeePayrollSettings?: Record<string, Record<string, { dailyWage: number }>>;
   calendarRemarks?: { date: string; employeeId: string; text: string }[];

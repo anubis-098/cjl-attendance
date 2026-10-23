@@ -10,6 +10,7 @@ import {
 import { normalizeDepartment } from "./departments";
 import { normalizeDayCode } from "./day-codes";
 import { isWeeklyHoliday } from "./master-calendar";
+import { buildActualOnlyShifts } from "./actual-only-shifts";
 
 const globalDB = globalThis as unknown as {
   employeePool?: Pool;
@@ -58,6 +59,7 @@ export async function readWorkspace(transaction?: PoolClient) {
       )
     ).rows;
     const data: Data = { ...emptyData(), ...state.data, punches };
+    data.actualOnlyShifts = buildActualOnlyShifts(employees, punches);
     const imageCounts = await c.query<{ key: string; count: string }>("SELECT employee_id || '|' || to_char(shift_date,'YYYY-MM-DD') AS key, count(*) AS count FROM attendance_evidence WHERE content_type IN ('image/jpeg','image/png','image/webp') GROUP BY employee_id,shift_date");
     data.evidenceImageCounts = Object.fromEntries(imageCounts.rows.map(row => [row.key, Number(row.count)]));
     data.calendarRemarks = (await c.query(

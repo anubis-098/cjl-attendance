@@ -4,6 +4,7 @@ import { visibleWorkspace, canManageAttendance, canViewMoney } from "./permissio
 import type { Data, Shift } from "./engine";
 const data: Data = {
   shifts: [{emp_id:"A",device_emp_id:"DA"}, {emp_id:"B",device_emp_id:"DB"}] as Shift[],
+  actualOnlyShifts: [{emp_id:"C",device_emp_id:"DC"}] as Shift[],
   punches: [{device_emp_id:"DA",punch_timestamp:"2026-10-01 08:00",punch_type:"UNKNOWN"}, {device_emp_id:"DB",punch_timestamp:"2026-10-01 08:00",punch_type:"UNKNOWN"}],
   reviews: {"A|2026-10-01":{approved:true,overBudget:false,note:""},"B|2026-10-01":{approved:false,overBudget:false,note:""}},
   audit:[{id:"secret",key:"B",actor:"admin",timestamp:"",reason:"",before:"salary",after:"salary"}],
@@ -30,6 +31,16 @@ test("employee scope comes from account and isolates scans, reviews, remarks and
   assert.equal(visibleWorkspace(workspace,{role:"employee"}).employeeCount,0);
   assert.equal(visibleWorkspace(workspace,{role:"employee",employeeId:"unknown"}).data.punches.length,0);
   assert.equal(workspace.data.shifts.length,2);
+});
+test("employee role can see its own Actual-only scans and no other employee scans",()=>{
+  const withScans = { ...workspace, employees: [...workspace.employees, { employee_id: "C" }], data: {
+    ...data,
+    punches: [...data.punches, { device_emp_id: "DC", punch_timestamp: "2026-10-01 08:00", punch_type: "UNKNOWN" as const }],
+  }};
+  const own = visibleWorkspace(withScans, { role: "employee", employeeId: "C" });
+  assert.deepEqual(own.data.actualOnlyShifts?.map(s => s.emp_id), ["C"]);
+  assert.deepEqual(own.data.punches.map(p => p.device_emp_id), ["DC"]);
+  assert.deepEqual(visibleWorkspace(withScans, { role: "employee", employeeId: "A" }).data.actualOnlyShifts, []);
 });
 test("manager permissions preserved; viewers cannot manage or see money",()=>{
   for(const role of ["super_admin","supervisor"] as const) {

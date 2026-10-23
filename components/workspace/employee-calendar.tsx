@@ -129,15 +129,20 @@ export default function EmployeeCalendar({
     addDays(gridStart, i),
   );
   const employeeShifts = useMemo(
-    () =>
-      data.shifts.filter(
+    () => {
+      const scheduled = data.shifts.filter(
         (s) =>
           s.emp_id === employeeId &&
           (!data.employeeEndDates?.[employeeId] ||
             s.date <= data.employeeEndDates[employeeId]),
-      ),
-    [data.shifts, data.employeeEndDates, employeeId],
+      );
+      return scheduled.length
+        ? scheduled
+        : (data.actualOnlyShifts || []).filter(s => s.emp_id === employeeId);
+    },
+    [data.shifts, data.actualOnlyShifts, data.employeeEndDates, employeeId],
   );
+  const actualOnlyCalendar = employeeShifts.length > 0 && employeeShifts.every(s => s.source_day_code === "ACTUAL_ONLY");
   const resignationDate = data.employeeEndDates?.[employeeId];
   const resignedWithoutDate = data.employeesResignedWithoutDate?.includes(employeeId) || false;
   const employee = employeeShifts[0];
@@ -273,6 +278,9 @@ export default function EmployeeCalendar({
       </div>
       <EmployeeProfileCard employeeId={employeeId} fallbackName={employee?.emp_name || name || employeeId}
         payrollSettings={canEdit ? <EmployeePayrollSettings employeeId={employeeId} month={month} compact /> : undefined} />
+      {actualOnlyCalendar && <p className="actual-only-notice" role="status">
+        {t("Master shift time is invalid. This calendar shows actual fingerprint scans only; payroll and OT are not calculated from these entries.")}
+      </p>}
       <section
         className={`panel employee-month-panel ${requestOpen ? "request-mode" : ""}`}
       >
@@ -287,20 +295,6 @@ export default function EmployeeCalendar({
             onBusy={setSaving}
             onClose={closeRequest}
           />
-        )}
-        {shiftMode && (
-          <label className="shift-reason-field">
-            {t("เหตุผลเปลี่ยนกะ")}
-            <input
-              aria-label={t("เหตุผลเปลี่ยนกะ")}
-              required
-              maxLength={1000}
-              value={shiftReason}
-              disabled={saving}
-              onChange={(event) => setShiftReason(event.target.value)}
-              placeholder={t("เช่น เปลี่ยนกะตามที่หัวหน้ายืนยัน")}
-            />
-          </label>
         )}
         <div className="month-controls">
           <button
@@ -346,7 +340,7 @@ export default function EmployeeCalendar({
           >
             {t("เดือนนี้")}
           </button>
-          {canEdit && <><button
+          {canEdit && !actualOnlyCalendar && <><button
             className={`button ${selecting ? "calendar-cancel" : ""}`}
             aria-pressed={selecting}
             disabled={saving}
@@ -395,7 +389,7 @@ export default function EmployeeCalendar({
           >
             {t(shiftMode ? "ยกเลิกเปลี่ยนกะ" : "เปลี่ยนกะ")}
           </button>
-          <button className={`button ${manualMode ? "calendar-cancel" : ""}`} disabled={saving || !employee}
+          <button className={`button ${manualMode ? "calendar-cancel" : ""}`} disabled={saving || !employee || actualOnlyCalendar}
             aria-pressed={manualMode} onClick={() => {
               setManualMode(!manualMode); setSelecting(false); setSelected([]); setHolidayMode(false);
               setShiftMode(false); setRequestOpen(false); setRequestDay(null); setHolidayDates([]); preview.close();
@@ -431,6 +425,7 @@ export default function EmployeeCalendar({
             saving={saving}
             reason={shiftReason}
             onConfirm={confirmShifts}
+            onReasonChange={setShiftReason}
             onSelectAll={() =>
               setHolidayDates(days.filter((d) => d.startsWith(month)))
             }
@@ -744,16 +739,16 @@ export default function EmployeeCalendar({
                       <button
                         className={`month-shift-details ${e.actual ? "actual-card" : ""}`}
                         disabled={saving || holidayMode || shiftMode}
-                        {...preview.bind(
+                        {...(e.shift.source_day_code === "ACTUAL_ONLY" ? {} : preview.bind(
                           e.shift,
                           e.result,
                           e.pending,
                           e.actual,
-                        )}
+                        ))}
                         onClick={() => {
                           preview.close();
                           setActiveActual(e.actual);
-                          if (canEdit) setActive(e.shift);
+                          if (canEdit && e.shift.source_day_code !== "ACTUAL_ONLY") setActive(e.shift);
                         }}
                         aria-label={t(
                           `รายละเอียด ${e.shift.date} ${e.shift.shift_code}`,
